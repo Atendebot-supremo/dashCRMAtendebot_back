@@ -27,10 +27,14 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 
     req.context = {
       user: {
-        id: payload.clientId,
+        id: payload.userId,
         name: payload.name,
-        email: payload.email,
-        role: payload.role
+        email: '', // Não usamos mais email
+        role: payload.role,
+        // Dados adicionais da Helena
+        phone: payload.phone,
+        helenaUserId: payload.helenaUserId,
+        tenantId: payload.tenantId
       }
     }
 
@@ -51,4 +55,3 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
       .json(createErrorResponse('Token inválido', ErrorCode.UNAUTHORIZED))
   }
 }
-

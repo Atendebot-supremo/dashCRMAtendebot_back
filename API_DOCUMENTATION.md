@@ -81,24 +81,41 @@ CACHE_TTL=300000  # 5 minutos em ms
 
 ### Fluxo de Autenticação
 
-1. **Cliente faz login** → API retorna JWT com `clientId`
-2. **Cliente faz requisições** → Envia `Authorization: Bearer <jwt>`
-3. **API valida JWT** → Extrai `clientId`
-4. **API busca token Helena** → Usa token específico do cliente
-5. **API chama Helena** → Retorna dados transformados
+1. **Cliente digita telefone** → POST `/api/auth/login` com `{ "phone": "..." }`
+2. **API busca no Supabase** → Tabela `users_dashcrmatendebot` pelo telefone
+3. **API obtém helena_token** → Token armazenado no registro do usuário
+4. **API autentica na Helena** → POST `/auth/v1/login/authenticate/external`
+5. **API gera JWT** → Contém userId, phone, helenaUserId, tenantId
+6. **Cliente faz requisições** → Envia `Authorization: Bearer <jwt>`
+7. **API valida JWT** → Usa token do Supabase para chamar Helena
 
 ### Estrutura do JWT
 
 ```typescript
 {
-  clientId: 'maxchip',
+  userId: 'uuid-do-supabase',
   name: 'MaxChip Telecom',
-  email: 'contato@maxchip.com',
+  phone: '5531999999999',
+  helenaUserId: 'uuid-helena',
+  tenantId: 'tenant-id-helena',
   role: 'client',
   iat: 1234567890,
   exp: 1234567890
 }
 ```
+
+### Banco de Dados (Supabase)
+
+**Tabela: `users_dashcrmatendebot`**
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | UUID | ID único (auto-gerado) |
+| name | VARCHAR(255) | Nome do cliente |
+| phone | VARCHAR(20) | Telefone (único, usado no login) |
+| helena_token | VARCHAR(255) | Token permanente da API Helena |
+| created_at | TIMESTAMP | Data de criação |
+| active | BOOLEAN | Se o usuário está ativo |
 
 ---
 
@@ -108,13 +125,12 @@ CACHE_TTL=300000  # 5 minutos em ms
 
 #### POST `/api/auth/login`
 
-Login do cliente para acessar o dashboard.
+Login do cliente via telefone. Autentica na API Helena e retorna tokens.
 
 **Request:**
 ```json
 {
-  "email": "contato@maxchip.com",
-  "password": "senha-segura"
+  "phone": "31999999999"
 }
 ```
 
@@ -124,10 +140,18 @@ Login do cliente para acessar o dashboard.
   "success": true,
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "client": {
-      "id": "maxchip",
+    "helena": {
+      "accessToken": "eyJhbGciOi...",
+      "userId": "uuid-helena",
+      "tenantId": "tenant-id",
+      "expiresIn": "2024-01-01T00:00:00Z",
+      "refreshToken": "rf_xxx",
+      "urlRedirect": "https://..."
+    },
+    "user": {
+      "id": "uuid-supabase",
       "name": "MaxChip Telecom",
-      "email": "contato@maxchip.com"
+      "phone": "5531999999999"
     }
   },
   "message": "Login realizado com sucesso"
@@ -1673,8 +1697,7 @@ describe('CRM API', () => {
     const response = await request(app)
       .post('/api/auth/login')
       .send({
-        email: 'contato@maxchip.com',
-        password: 'senha-segura'
+        phone: '31999999999'
       })
     
     authToken = response.body.data.token

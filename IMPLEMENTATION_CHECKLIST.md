@@ -2,8 +2,8 @@
 
 ## 📋 Status Geral
 
-- [ ] Backend Criado
-- [ ] Endpoints Implementados
+- [x] Backend Criado
+- [x] Endpoints Implementados
 - [ ] Testes Realizados
 - [ ] Deploy Backend Concluído
 - [ ] Frontend Migrado
@@ -12,292 +12,237 @@
 
 ---
 
-## 🔧 Fase 1: Setup Inicial do Projeto
+## 🔧 Fase 1: Setup Inicial do Projeto ✅
 
 ### 1.1 Configuração Base
-- [ ] Criar diretório `dashCRMAtendebot_back`
-- [ ] Inicializar `npm init -y`
-- [ ] Instalar dependências principais
-- [ ] Instalar dependências de desenvolvimento
-- [ ] Criar `.gitignore`
-- [ ] Inicializar TypeScript `npx tsc --init`
+- [x] Criar diretório `dashCRMAtendebot_back`
+- [x] Inicializar `npm init -y`
+- [x] Instalar dependências principais
+- [x] Instalar dependências de desenvolvimento
+- [x] Criar `.gitignore`
+- [x] Inicializar TypeScript `npx tsc --init`
 
 ### 1.2 Estrutura de Pastas
-- [ ] Criar `src/config/`
-- [ ] Criar `src/features/auth/`
-- [ ] Criar `src/features/crm/`
-- [ ] Criar `src/features/metrics/`
-- [ ] Criar `src/middleware/`
-- [ ] Criar `src/types/`
-- [ ] Criar `src/utils/`
-- [ ] Criar `public/`
+- [x] Criar `src/config/`
+- [x] Criar `src/features/auth/`
+- [x] Criar `src/features/crm/`
+- [x] Criar `src/features/metrics/`
+- [x] Criar `src/middleware/`
+- [x] Criar `src/types/`
+- [x] Criar `src/utils/`
 
 ### 1.3 Configuração de Ambiente
-- [ ] Criar arquivo `.env`
-- [ ] Definir `PORT`
-- [ ] Definir `NODE_ENV`
-- [ ] Definir `JWT_SECRET`
-- [ ] Definir `HELENA_API_URL`
-- [ ] Definir `HELENA_TOKENS` (JSON array)
-- [ ] Criar `.env.example`
+- [x] Criar arquivo `.env`
+- [x] Definir `PORT`
+- [x] Definir `NODE_ENV`
+- [x] Definir `JWT_SECRET`
+- [x] Definir `SUPABASE_URL`
+- [x] Definir `SUPABASE_SERVICE_KEY`
+- [x] Definir `HELENA_API_URL`
+- [x] Definir `CORS_ORIGINS`
 
 ### 1.4 Scripts package.json
-- [ ] Script `dev` configurado
-- [ ] Script `build` configurado
-- [ ] Script `start` configurado
-- [ ] Script `test` configurado (opcional)
+- [x] Script `dev` configurado
+- [x] Script `build` configurado
+- [x] Script `start` configurado
 
 ---
 
-## 🔐 Fase 2: Autenticação
+## 🗄️ Fase 2: Supabase ✅
 
-### 2.1 Tipos e Interfaces
-- [ ] `src/types/index.ts` - APIResponse
-- [ ] `src/types/index.ts` - ErrorCode enum
-- [ ] `src/features/auth/types.ts` - LoginRequest
-- [ ] `src/features/auth/types.ts` - LoginResponse
+### 2.1 Configuração Supabase
+- [x] Cliente Supabase criado (`src/config/supabase.ts`)
+- [x] Função `getUserByPhone()` implementada
+- [x] Função `getUserById()` implementada
+- [x] Função `getHelenaTokenByUserId()` implementada
 
-### 2.2 Auth Service
-- [ ] `src/features/auth/authService.ts` criado
-- [ ] Método `login()` implementado
-- [ ] Geração de JWT implementada
-- [ ] Validação de credenciais implementada
-
-### 2.3 Auth Controller
-- [ ] `src/features/auth/authController.ts` criado
-- [ ] Método `login()` implementado
-- [ ] Método `logout()` implementado
-- [ ] Validação de entrada implementada
-- [ ] Comentários JSDoc/Swagger adicionados
-
-### 2.4 Auth Routes
-- [ ] `src/features/auth/authRoutes.ts` criado
-- [ ] Rota `POST /api/auth/login`
-- [ ] Validação com express-validator
-- [ ] Rate limiting configurado
-
-### 2.5 Middleware de Autenticação
-- [ ] `src/middleware/auth.middleware.ts` criado
-- [ ] Extração do token do header
-- [ ] Validação do JWT
-- [ ] Anexar `req.context.user`
-- [ ] Tratamento de erros (401)
-
-### 2.6 Testes de Autenticação
-- [ ] Testar login com credenciais válidas
-- [ ] Testar login com credenciais inválidas
-- [ ] Testar acesso sem token
-- [ ] Testar token expirado
+### 2.2 Tabela users_dashcrmatendebot
+- [x] SQL de criação (`supabase_setup.sql`)
+- [x] Campos: id, name, phone, helena_token, created_at, active
+- [x] Índice por phone
+- [x] Constraint UNIQUE em phone
 
 ---
 
-## 📊 Fase 3: Módulo CRM
+## 🔐 Fase 3: Autenticação ✅
 
-### 3.1 Configuração Helena
-- [ ] `src/config/helena.ts` criado
-- [ ] Função `getHelenaToken()` implementada
-- [ ] Carregar tokens do .env
-- [ ] Tratamento de erro para cliente não encontrado
+### 3.1 Tipos e Interfaces
+- [x] `src/types/index.ts` - AuthenticatedUser com phone, helenaUserId, tenantId
+- [x] `src/features/auth/types.ts` - LoginRequest (phone)
+- [x] `src/features/auth/types.ts` - HelenaAuthResponse
+- [x] `src/features/auth/types.ts` - LoginResult
 
-### 3.2 Helena Client
-- [ ] `src/features/crm/helenaClient.ts` criado
-- [ ] Classe `HelenaClient` criada
-- [ ] Método `getPanels()` implementado
-- [ ] Método `getPanelById()` implementado
-- [ ] Método `getCards()` implementado
-- [ ] Método `getCardById()` implementado
-- [ ] Método `getContacts()` implementado
-- [ ] Tratamento de erros HTTP
-- [ ] Timeout configurado
+### 3.2 Auth Service
+- [x] `src/features/auth/authService.ts` criado
+- [x] Método `findUserByPhone()` - busca no Supabase
+- [x] Método `authenticateWithHelena()` - chama API Helena
+- [x] Método `login()` - fluxo completo
+- [x] Geração de JWT implementada
+- [x] Normalização de telefone implementada
 
-### 3.3 CRM Types
-- [ ] `src/features/crm/types.ts` criado
-- [ ] Interface `Panel`
-- [ ] Interface `Card`
-- [ ] Interface `Contact`
-- [ ] Interface `User`
-- [ ] Interface `Channel`
-- [ ] Interface `CardFilters`
+### 3.3 Auth Controller
+- [x] `src/features/auth/authController.ts` criado
+- [x] Método `login()` implementado
+- [x] Validação de entrada implementada
+- [x] Comentários JSDoc/Swagger adicionados
 
-### 3.4 CRM Service
-- [ ] `src/features/crm/crmService.ts` criado
-- [ ] Método `getPanels()` implementado
-- [ ] Método `getPanelById()` implementado
-- [ ] Método `getCards()` implementado
-- [ ] Método `getCardById()` implementado
-- [ ] Método `getUsers()` implementado (ou stub)
-- [ ] Método `getChannels()` implementado (ou stub)
-- [ ] Enriquecimento de dados (se necessário)
+### 3.4 Auth Routes
+- [x] `src/features/auth/authRoutes.ts` criado
+- [x] Rota `POST /api/auth/login`
+- [x] Validação com express-validator
+- [x] Rate limiting configurado (10 req/15min)
 
-### 3.5 CRM Controller
-- [ ] `src/features/crm/crmController.ts` criado
-- [ ] Método `getPanels()` implementado
-- [ ] Método `getPanelById()` implementado
-- [ ] Método `getCards()` implementado
-- [ ] Método `getCardById()` implementado
-- [ ] Validação de entrada
-- [ ] Comentários Swagger
-
-### 3.6 CRM Routes
-- [ ] `src/features/crm/crmRoutes.ts` criado
-- [ ] Rota `GET /api/crm/panels`
-- [ ] Rota `GET /api/crm/panels/:id`
-- [ ] Rota `GET /api/crm/cards`
-- [ ] Rota `GET /api/crm/cards/:id`
-- [ ] Rota `GET /api/crm/users`
-- [ ] Rota `GET /api/crm/channels`
-- [ ] Middleware de auth aplicado
-- [ ] Validações com express-validator
-
-### 3.7 Testes CRM
-- [ ] Testar listagem de painéis
-- [ ] Testar detalhes de painel
-- [ ] Testar listagem de cards sem filtros
-- [ ] Testar listagem de cards com filtros
-- [ ] Testar detalhes de card
-- [ ] Testar com panelId inválido
-- [ ] Testar paginação
+### 3.5 Middleware de Autenticação
+- [x] `src/middleware/auth.middleware.ts` criado
+- [x] Extração do token do header
+- [x] Validação do JWT
+- [x] Anexar `req.context.user` com phone, helenaUserId, tenantId
+- [x] Tratamento de erros (401)
 
 ---
 
-## 📈 Fase 4: Módulo de Métricas
+## 📊 Fase 4: Módulo CRM ✅
 
-### 4.1 Metrics Types
-- [ ] `src/features/metrics/types.ts` criado
-- [ ] Interface `FunnelMetrics`
-- [ ] Interface `RevenueMetrics`
-- [ ] Interface `ConversionMetrics`
-- [ ] Interface `LossMetrics`
-- [ ] Interface `SellerPerformance`
-- [ ] Interface `ProductMetrics`
+### 4.1 Configuração Helena
+- [x] `src/config/helena.ts` atualizado
+- [x] Função `getHelenaToken()` busca do Supabase
+- [x] URL base configurada para `api.helena.run`
 
-### 4.2 Utils de Cálculo
-- [ ] `src/utils/calculations.ts` criado
-- [ ] Função `calculateConversionRate()`
-- [ ] Função `calculateAverageTicket()`
-- [ ] Função `calculateSalesCycle()`
-- [ ] Função `calculateResponseTime()`
-- [ ] Função `groupByStage()`
-- [ ] Função `groupBySeller()`
-- [ ] Função `groupByChannel()`
+### 4.2 Helena Client
+- [x] `src/features/crm/helenaClient.ts` criado
+- [x] Classe `HelenaClient` criada
+- [x] Método `getPanels()` implementado
+- [x] Método `getPanelById()` implementado
+- [x] Método `getCards()` implementado
+- [x] Método `getCardById()` implementado
+- [x] Método `getContacts()` implementado
+- [x] Tratamento de erros HTTP
+- [x] Timeout configurado (30s)
 
-### 4.3 Metrics Service
-- [ ] `src/features/metrics/metricsService.ts` criado
-- [ ] Método `getFunnelMetrics()` implementado
-- [ ] Método `getRevenueMetrics()` implementado
-- [ ] Método `getConversionMetrics()` implementado
-- [ ] Método `getLossAnalysis()` implementado
-- [ ] Método `getTemporalComparison()` implementado
-- [ ] Método `getSellerPerformance()` implementado
-- [ ] Método `getProductAnalysis()` implementado
-- [ ] Método `getDashboard()` (all-in-one) implementado
+### 4.3 CRM Types
+- [x] `src/features/crm/types.ts` criado
+- [x] Interface `Panel`
+- [x] Interface `Card`
+- [x] Interface `Contact`
+- [x] Interface `User`
+- [x] Interface `Channel`
+- [x] Interface `CardFilters`
 
-### 4.4 Metrics Controller
-- [ ] `src/features/metrics/metricsController.ts` criado
-- [ ] Método `getFunnelMetrics()` implementado
-- [ ] Método `getRevenueMetrics()` implementado
-- [ ] Método `getConversionMetrics()` implementado
-- [ ] Método `getLossAnalysis()` implementado
-- [ ] Método `getTemporalComparison()` implementado
-- [ ] Método `getSellerPerformance()` implementado
-- [ ] Método `getProductAnalysis()` implementado
-- [ ] Método `getDashboard()` implementado
-- [ ] Comentários Swagger
+### 4.4 CRM Service
+- [x] `src/features/crm/crmService.ts` atualizado
+- [x] Método `getClient()` agora é async (busca token do Supabase)
+- [x] Método `getPanels()` implementado
+- [x] Método `getPanelById()` implementado
+- [x] Método `getCards()` implementado
+- [x] Método `getCardById()` implementado
+- [x] Método `getUsers()` implementado
+- [x] Método `getChannels()` implementado
 
-### 4.5 Metrics Routes
-- [ ] `src/features/metrics/metricsRoutes.ts` criado
-- [ ] Rota `GET /api/metrics/funnel`
-- [ ] Rota `GET /api/metrics/revenue`
-- [ ] Rota `GET /api/metrics/conversion`
-- [ ] Rota `GET /api/metrics/loss`
-- [ ] Rota `GET /api/metrics/temporal`
-- [ ] Rota `GET /api/metrics/seller-performance`
-- [ ] Rota `GET /api/metrics/products`
-- [ ] Rota `GET /api/metrics/dashboard`
-- [ ] Validações aplicadas
+### 4.5 CRM Controller
+- [x] `src/features/crm/crmController.ts` criado
+- [x] Todos os métodos implementados
+- [x] Comentários Swagger
 
-### 4.6 Testes de Métricas
-- [ ] Testar métricas de funil
-- [ ] Testar métricas de receita
-- [ ] Testar métricas de conversão
-- [ ] Testar análise de perdas
-- [ ] Testar comparações temporais
-- [ ] Testar performance por vendedor
-- [ ] Testar análise de produtos
-- [ ] Testar dashboard completo
+### 4.6 CRM Routes
+- [x] `src/features/crm/crmRoutes.ts` criado
+- [x] Rota `GET /api/crm/panels`
+- [x] Rota `GET /api/crm/panels/:id`
+- [x] Rota `GET /api/crm/cards`
+- [x] Rota `GET /api/crm/cards/:id`
+- [x] Rota `GET /api/crm/users`
+- [x] Rota `GET /api/crm/channels`
+- [x] Middleware de auth aplicado
+- [x] Validações com express-validator
 
 ---
 
-## 🚀 Fase 5: Server e Infraestrutura
+## 📈 Fase 5: Módulo de Métricas ✅
 
-### 5.1 Server Bootstrap
-- [ ] `src/server.ts` criado
-- [ ] Express inicializado
-- [ ] Helmet configurado
-- [ ] CORS configurado
-- [ ] Rate limiting global
-- [ ] Body parser configurado
-- [ ] Rotas registradas
-- [ ] Health endpoints (`/health`, `/ready`, `/live`)
-- [ ] Tratamento de 404
-- [ ] Error handler global
+### 5.1 Metrics Types
+- [x] `src/features/metrics/types.ts` criado
+- [x] Interface `FunnelMetrics`
+- [x] Interface `RevenueMetrics`
+- [x] Interface `ConversionMetrics`
+- [x] Interface `LossMetrics`
+- [x] Interface `SellerPerformance`
+- [x] Interface `ProductMetrics`
+- [x] Interface `DashboardMetrics`
 
-### 5.2 Swagger/OpenAPI
-- [ ] Swagger configurado
-- [ ] Definições de esquemas
-- [ ] Security schemes (bearerAuth)
-- [ ] Tags por domínio
-- [ ] Rota `/api/docs` funcionando
-- [ ] Testar no navegador
+### 5.2 Utils de Cálculo
+- [x] `src/utils/calculations.ts` criado
+- [x] Função `calculateConversionRate()`
+- [x] Função `calculateAverageTicket()`
+- [x] Função `calculateSalesCycle()`
+- [x] Função `calculateResponseTime()`
+- [x] Função `groupBy()`
+- [x] Função `sumBy()`
+- [x] Função `average()`
 
-### 5.3 Logs
-- [ ] Winston configurado (opcional)
-- [ ] Logs de erro
-- [ ] Logs de info
-- [ ] Logs em arquivo
-- [ ] Logs no console (dev)
+### 5.3 Metrics Service
+- [x] `src/features/metrics/metricsService.ts` criado
+- [x] Método `getFunnelMetrics()` implementado
+- [x] Método `getRevenueMetrics()` implementado
+- [x] Método `getConversionMetrics()` implementado
+- [x] Método `getLossAnalysis()` implementado
+- [x] Método `getTemporalComparison()` implementado
+- [x] Método `getSellerPerformance()` implementado
+- [x] Método `getProductsAnalysis()` implementado
+- [x] Método `getDashboard()` implementado
 
-### 5.4 Cache
-- [ ] `src/utils/cache.ts` criado (opcional)
-- [ ] Node-cache ou Redis configurado
-- [ ] Funções `getCached()`, `setCached()`, `deleteCached()`
-- [ ] TTL configurado
-- [ ] Cache aplicado em endpoints críticos
+### 5.4 Metrics Controller
+- [x] `src/features/metrics/metricsController.ts` criado
+- [x] Todos os métodos implementados
+- [x] Comentários Swagger
 
----
-
-## 🧪 Fase 6: Testes
-
-### 6.1 Testes Unitários
-- [ ] Instalar Jest/Vitest
-- [ ] Testar `calculations.ts`
-- [ ] Testar `cache.ts`
-- [ ] Testar `helena.ts`
-
-### 6.2 Testes de Integração
-- [ ] Instalar supertest
-- [ ] Testar fluxo de autenticação
-- [ ] Testar endpoints CRM
-- [ ] Testar endpoints de métricas
-- [ ] Testar tratamento de erros
-
-### 6.3 Testes Manuais
-- [ ] Testar com Postman/Insomnia
-- [ ] Criar collection de testes
-- [ ] Documentar cenários de teste
-- [ ] Validar todos os status codes
-- [ ] Validar estruturas de response
+### 5.5 Metrics Routes
+- [x] `src/features/metrics/metricsRoutes.ts` criado
+- [x] Rota `GET /api/metrics/funnel`
+- [x] Rota `GET /api/metrics/revenue`
+- [x] Rota `GET /api/metrics/conversion`
+- [x] Rota `GET /api/metrics/loss`
+- [x] Rota `GET /api/metrics/temporal`
+- [x] Rota `GET /api/metrics/seller-performance`
+- [x] Rota `GET /api/metrics/products`
+- [x] Rota `GET /api/metrics/dashboard`
+- [x] Validações aplicadas
 
 ---
 
-## 📦 Fase 7: Deploy
+## 🚀 Fase 6: Server e Infraestrutura ✅
+
+### 6.1 Server Bootstrap
+- [x] `src/server.ts` criado
+- [x] Express inicializado
+- [x] Helmet configurado
+- [x] CORS configurado
+- [x] Rate limiting global
+- [x] Body parser configurado
+- [x] Rotas registradas
+- [x] Health endpoints (`/health`, `/ready`, `/live`)
+- [x] Tratamento de 404
+- [x] Error handler global
+- [x] Graceful shutdown
+
+### 6.2 Swagger/OpenAPI
+- [x] Swagger configurado
+- [x] Security schemes (bearerAuth)
+- [x] Tags por domínio
+- [x] Rota `/api/docs` funcionando
+
+### 6.3 Cache
+- [x] `src/utils/cache.ts` criado
+- [x] Node-cache configurado
+- [x] Funções `getCached()`, `setCached()`, `deleteCached()`
+
+---
+
+## 📦 Fase 7: Deploy ⏳
 
 ### 7.1 Preparação
-- [ ] Criar `Dockerfile`
-- [ ] Criar `.dockerignore`
-- [ ] Testar build local `npm run build`
+- [x] Criar `Dockerfile`
+- [x] Criar `railway.json`
+- [x] Testar build local `npm run build`
 - [ ] Testar Docker build local
-- [ ] Criar documentação de deploy
 
 ### 7.2 Railway (Backend)
 - [ ] Criar conta Railway
@@ -308,15 +253,9 @@
 - [ ] Testar URL gerada
 - [ ] Configurar domínio customizado (opcional)
 
-### 7.3 Monitoramento
-- [ ] Configurar logs
-- [ ] Configurar alertas (opcional)
-- [ ] Testar health endpoints
-- [ ] Documentar URLs de produção
-
 ---
 
-## 🎨 Fase 8: Migração do Frontend
+## 🎨 Fase 8: Migração do Frontend ⏳
 
 ### 8.1 Preparação
 - [ ] Ler `MIGRATION_GUIDE.md`
@@ -324,166 +263,65 @@
 - [ ] Backup do código atual
 
 ### 8.2 Cliente HTTP
-- [ ] Criar `src/lib/api/client.ts`
-- [ ] Implementar `fetchWithAuth()`
-- [ ] Implementar `apiClient.login()`
-- [ ] Implementar `apiClient.getPanels()`
-- [ ] Implementar `apiClient.getCards()`
-- [ ] Implementar `apiClient.getFunnelMetrics()`
-- [ ] Implementar outros métodos
+- [ ] Criar cliente API atualizado
+- [ ] Implementar `apiClient.login()` com telefone
+- [ ] Atualizar outros métodos
 
 ### 8.3 Autenticação Frontend
-- [ ] Criar `src/pages/LoginPage.tsx`
-- [ ] Criar `src/components/auth/ProtectedRoute.tsx`
-- [ ] Atualizar `src/App.tsx` com rotas
+- [ ] Criar página de login com campo telefone
 - [ ] Implementar salvamento de token
 - [ ] Implementar logout
 
 ### 8.4 Atualizar Hooks
-- [ ] Atualizar `usePanels()`
-- [ ] Atualizar `useCards()`
-- [ ] Atualizar `useUsers()`
-- [ ] Atualizar `useChannels()`
-- [ ] Criar `useFunnelMetrics()`
-- [ ] Criar `useRevenueMetrics()`
-- [ ] Criar `useDashboard()`
+- [ ] Atualizar hooks React Query
 
-### 8.5 Atualizar Componentes
-- [ ] Atualizar `DashboardPage.tsx`
-- [ ] Atualizar `FunilView.tsx`
-- [ ] Atualizar `RevenueMetrics.tsx`
-- [ ] Atualizar `ConversionMetrics.tsx`
-- [ ] Remover cálculos do frontend (usar backend)
-
-### 8.6 Limpeza
-- [ ] Remover `helena-client.ts`
-- [ ] Remover `calculations.ts` (se totalmente no backend)
-- [ ] Remover proxy do `vite.config.ts`
-- [ ] Atualizar variáveis de ambiente
-- [ ] Remover código não utilizado
-
-### 8.7 Testes Frontend
-- [ ] Testar login
-- [ ] Testar logout
-- [ ] Testar acesso sem autenticação
-- [ ] Testar carregamento do dashboard
-- [ ] Testar filtros
-- [ ] Testar todos os componentes
-
-### 8.8 Deploy Frontend
-- [ ] Atualizar variáveis Railway (remover tokens Helena)
-- [ ] Adicionar `VITE_API_URL`
+### 8.5 Deploy Frontend
+- [ ] Atualizar variáveis Railway
 - [ ] Fazer redeploy
 - [ ] Testar em produção
 
 ---
 
-## ✅ Fase 9: Validação Final
+## ✅ Fase 9: Validação Final ⏳
 
 ### 9.1 Backend
-- [ ] Todos os endpoints funcionando
-- [ ] Swagger documentado
-- [ ] Testes passando
-- [ ] Logs funcionando
-- [ ] Health checks OK
+- [x] Todos os endpoints funcionando
+- [x] Swagger documentado
+- [x] Build passando
+- [ ] Testes manuais completos
 - [ ] Deploy estável
 
 ### 9.2 Frontend
 - [ ] Login funcionando
 - [ ] Dashboard carregando
 - [ ] Filtros funcionando
-- [ ] Métricas corretas
 - [ ] Performance OK
 - [ ] Deploy estável
 
 ### 9.3 Integração
 - [ ] Autenticação E2E
 - [ ] Fluxo completo testado
-- [ ] Performance aceitável
-- [ ] Sem erros no console
 - [ ] Tokens seguros
 
-### 9.4 Documentação
-- [ ] README atualizado
-- [ ] API documentada
-- [ ] Variáveis de ambiente documentadas
-- [ ] Procedimentos de deploy documentados
-- [ ] Credenciais seguras
+---
+
+## 📝 Notas
+
+### Alterações da v2.0.0 (Novembro 2024)
+- Migração de autenticação email/senha para telefone
+- Integração com Supabase para armazenamento de usuários
+- Integração com API Helena para login externo
+- Remoção do bcrypt (não mais necessário)
+- Atualização da URL Helena para api.helena.run
+
+### Configuração Atual
+- **Banco de Dados**: Supabase (PostgreSQL)
+- **Tabela**: users_dashcrmatendebot
+- **Login**: Via telefone + API Helena
+- **Token Helena**: Armazenado no Supabase por usuário
 
 ---
 
-## 🎯 Métricas de Sucesso
-
-- [ ] Backend responde em < 500ms
-- [ ] Frontend carrega em < 3s
-- [ ] Zero tokens expostos no frontend
-- [ ] 100% dos endpoints funcionando
-- [ ] Swagger completo e funcional
-- [ ] Multi-tenancy funcionando
-- [ ] Cache funcionando
-- [ ] Logs informativos
-
----
-
-## 📚 Referências
-
-- [ ] `API_DOCUMENTATION.md` lido
-- [ ] `MIGRATION_GUIDE.md` lido
-- [ ] `QUICK_REFERENCE.md` consultado
-- [ ] `README_API_BACKEND.md` lido
-
----
-
-## 🏆 Conquistas
-
-- [ ] 🥉 Backend funcionando localmente
-- [ ] 🥈 Backend deployado em produção
-- [ ] 🥇 Frontend migrado e funcionando
-- [ ] 🏆 Sistema completo em produção
-
----
-
-## 📝 Notas e Observações
-
-```
-Adicione aqui suas notas durante a implementação:
-
-- Dificuldades encontradas:
-  
-
-- Soluções aplicadas:
-  
-
-- Melhorias futuras:
-  
-
-- Tempo gasto:
-  
-```
-
----
-
+**Versão:** 2.0.0  
 **Última Atualização:** Novembro 2024  
-**Versão:** 1.0.0  
-**Status:** 🔄 Em Progresso
-
----
-
-## 🚨 Problemas Comuns
-
-### Problema: Token Helena não funciona
-**Solução:** Verificar se o token está correto no `.env` e se o formato do JSON array está correto.
-
-### Problema: CORS Error
-**Solução:** Adicionar origem do frontend na lista de CORS permitidos no backend.
-
-### Problema: JWT expirado
-**Solução:** Fazer logout e login novamente no frontend.
-
-### Problema: Métricas vazias
-**Solução:** Verificar se o panelId está correto e se existem cards no período filtrado.
-
----
-
-**Bom trabalho! 🎉**
-
+**Status:** 🔄 Backend Completo, Deploy Pendente

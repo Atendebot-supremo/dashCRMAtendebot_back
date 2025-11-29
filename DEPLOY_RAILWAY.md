@@ -4,7 +4,8 @@
 
 1. Conta no [Railway](https://railway.app)
 2. Repositório Git (GitHub, GitLab, etc.)
-3. Token da API Helena configurado
+3. Supabase configurado com a tabela `users_dashcrmatendebot`
+4. Token da API Helena configurado no Supabase
 
 ---
 
@@ -37,10 +38,16 @@ No projeto Railway, vá em **Variables** e adicione:
 ```env
 PORT=3000
 NODE_ENV=production
-JWT_SECRET=seu-jwt-secret-super-seguro-para-producao
-HELENA_API_URL=https://api.flw.chat
-HELENA_TOKENS=[{"clientId":"maxchip","token":"pn_seu_token_aqui"}]
-CLIENTS_CONFIG=[{"clientId":"maxchip","name":"MaxChip Telecom","email":"contato@maxchip.com","passwordHash":"$2b$10$hash_gerado_com_bcrypt"}]
+JWT_SECRET=seu-jwt-secret-super-seguro-para-producao-minimo-32-caracteres
+
+# Supabase
+SUPABASE_URL=https://supabase.labfy.co
+SUPABASE_SERVICE_KEY=sua-service-key-do-supabase
+
+# Helena
+HELENA_API_URL=https://api.helena.run
+
+# Cache
 CACHE_TTL=300000
 ```
 
@@ -50,15 +57,18 @@ CACHE_TTL=300000
 CORS_ORIGINS=https://seu-frontend.railway.app,https://seu-dominio.com
 ```
 
-### 4. Gerar Hash de Senha para Produção
+### 4. Configurar Supabase
 
-Para gerar o hash bcrypt da senha do cliente:
+Antes do deploy, certifique-se de que:
 
-```bash
-node -e "const bcrypt=require('bcryptjs');bcrypt.hash('senha-do-cliente',10).then(h=>console.log(h));"
+1. A tabela `users_dashcrmatendebot` foi criada no Supabase
+2. Os usuários foram inseridos com seus tokens Helena
+
+```sql
+-- Exemplo de inserção
+INSERT INTO users_dashcrmatendebot (name, phone, helena_token, active)
+VALUES ('Maxchip', '5531999999999', 'pn_token_helena_aqui', true);
 ```
-
-Substitua `'senha-do-cliente'` pela senha real que o cliente usará para fazer login.
 
 ### 5. Configurar Build e Deploy
 
@@ -90,10 +100,10 @@ curl https://seu-projeto.railway.app/health
 # Swagger Docs
 # Acesse: https://seu-projeto.railway.app/api/docs
 
-# Teste de Login
+# Teste de Login (via Telefone)
 curl -X POST https://seu-projeto.railway.app/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"contato@maxchip.com","password":"senha-do-cliente"}'
+  -d '{"phone":"31999999999"}'
 ```
 
 ---
@@ -121,8 +131,10 @@ railway login
 railway link
 
 # Adicionar variáveis
-railway variables set JWT_SECRET=seu-secret
-railway variables set HELENA_TOKENS='[{"clientId":"maxchip","token":"pn_..."}]'
+railway variables set JWT_SECRET=seu-secret-super-seguro
+railway variables set SUPABASE_URL=https://supabase.labfy.co
+railway variables set SUPABASE_SERVICE_KEY=sua-service-key
+railway variables set HELENA_API_URL=https://api.helena.run
 # ... etc
 ```
 
@@ -133,11 +145,12 @@ railway variables set HELENA_TOKENS='[{"clientId":"maxchip","token":"pn_..."}]'
 - [ ] Código commitado e pushado
 - [ ] Projeto criado no Railway
 - [ ] Repositório conectado
-- [ ] Variáveis de ambiente configuradas
-- [ ] Hash bcrypt da senha gerado
-- [ ] `JWT_SECRET` definido (senha forte)
-- [ ] `HELENA_TOKENS` configurado (JSON válido)
-- [ ] `CLIENTS_CONFIG` configurado (JSON válido)
+- [ ] Tabela `users_dashcrmatendebot` criada no Supabase
+- [ ] Usuários inseridos no Supabase com tokens Helena
+- [ ] `JWT_SECRET` definido (senha forte, mínimo 32 caracteres)
+- [ ] `SUPABASE_URL` configurado
+- [ ] `SUPABASE_SERVICE_KEY` configurado
+- [ ] `HELENA_API_URL` configurado
 - [ ] `CORS_ORIGINS` configurado (se necessário)
 - [ ] Build passou com sucesso
 - [ ] Health check retorna 200 OK
@@ -169,15 +182,21 @@ railway variables set HELENA_TOKENS='[{"clientId":"maxchip","token":"pn_..."}]'
 
 ### Runtime Errors
 
-**Erro:** `Token Helena não encontrado`
-- **Solução:** Verifique se `HELENA_TOKENS` está no formato JSON válido
-- **Solução:** Verifique se `clientId` corresponde ao cliente configurado
+**Erro:** `SUPABASE_URL não configurada`
+- **Solução:** Adicione a variável `SUPABASE_URL` no Railway
+
+**Erro:** `Usuário não encontrado`
+- **Solução:** Verifique se o telefone está cadastrado na tabela `users_dashcrmatendebot`
 
 **Erro:** `JWT_SECRET is not defined`
 - **Solução:** Adicione a variável `JWT_SECRET` no Railway
 
 **Erro:** CORS error no frontend
 - **Solução:** Adicione a URL do frontend em `CORS_ORIGINS`
+
+**Erro:** `Erro na autenticação Helena`
+- **Solução:** Verifique se o `helena_token` no Supabase está correto
+- **Solução:** Verifique se o telefone está cadastrado na plataforma Helena
 
 ---
 
@@ -188,18 +207,18 @@ railway variables set HELENA_TOKENS='[{"clientId":"maxchip","token":"pn_..."}]'
 Nunca commite no Git:
 - ❌ `.env`
 - ❌ `JWT_SECRET`
-- ❌ `HELENA_TOKENS`
-- ❌ `CLIENTS_CONFIG` (com senhas reais)
+- ❌ `SUPABASE_SERVICE_KEY`
+- ❌ Tokens Helena
 
 Use apenas variáveis de ambiente do Railway para produção.
 
 ### Recomendações
 
 1. ✅ Use `JWT_SECRET` forte (mínimo 32 caracteres aleatórios)
-2. ✅ Use senhas fortes para clientes
-3. ✅ Configure `CORS_ORIGINS` apenas com URLs confiáveis
-4. ✅ Habilite logs no Railway para monitoramento
-5. ✅ Configure alertas para downtime
+2. ✅ Configure `CORS_ORIGINS` apenas com URLs confiáveis
+3. ✅ Habilite logs no Railway para monitoramento
+4. ✅ Configure alertas para downtime
+5. ✅ Mantenha os tokens Helena atualizados no Supabase
 
 ---
 
@@ -271,4 +290,3 @@ Para problemas:
 ---
 
 **Boa sorte com o deploy! 🚀**
-

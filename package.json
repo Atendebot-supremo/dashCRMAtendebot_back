@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/Atendebot-supremo/dashCRMAtendebot_back#readme",
   "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
