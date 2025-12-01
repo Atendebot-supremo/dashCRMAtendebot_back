@@ -23,7 +23,7 @@ export const supabase = createClient(
   }
 )
 
-// Tipo para a tabela users_dashCRMAtendebot
+// Tipo para a tabela users_dashcrmatendebot
 export interface UserDashCRM {
   id: string
   name: string
