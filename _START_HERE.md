@@ -35,6 +35,13 @@ O backend foi implementado com as seguintes características:
 ### 6️⃣ **MIGRATION_GUIDE.md**
 🔄 Guia para migrar o frontend.
 
+### 7️⃣ **VALIDATION_STEPS.md** ⭐ **VALIDAÇÃO**
+✅ Checklist completo de validação:
+- Testes de todos os endpoints
+- Validação de segurança
+- Validação de performance
+- Problemas comuns e soluções
+
 ---
 
 ## 🎯 Configuração Rápida
@@ -216,11 +223,34 @@ open http://localhost:3000/api/docs
 - [x] Endpoints CRM
 - [x] Endpoints Métricas
 - [x] Swagger documentação
+- [x] Tabela criada no Supabase
+- [x] Usuário de teste inserido
 
-### ⏳ Pendente
-- [ ] Deploy no Railway
-- [ ] Migrar Frontend
-- [ ] Testes em produção
+### 🔄 Validação (Agora)
+1. **Seguir VALIDATION_STEPS.md** ⭐
+   - Testar todos os endpoints
+   - Validar autenticação
+   - Validar integração com Helena
+   - Verificar performance
+   - Testar segurança
+
+### ⏳ Próximos Passos
+1. **Deploy no Railway**
+   - Seguir `DEPLOY_RAILWAY.md`
+   - Configurar variáveis de ambiente
+   - Testar em produção
+
+2. **Migrar Frontend**
+   - Seguir `MIGRATION_GUIDE.md`
+   - Atualizar cliente HTTP
+   - Criar página de login com telefone
+   - Testar integração completa
+
+3. **Testes End-to-End**
+   - Login completo (frontend → backend → Helena)
+   - Dashboard carregando dados reais
+   - Filtros funcionando
+   - Métricas calculadas corretamente
 
 ---
 

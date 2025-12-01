@@ -435,6 +435,28 @@ CMD ["node", "dist/server.js"]
 
 ---
 
+## ✅ Próximos Passos de Validação
+
+Após configurar o backend, siga o checklist completo em:
+
+**📋 [VALIDATION_STEPS.md](VALIDATION_STEPS.md)** ⭐
+
+Este documento contém:
+- ✅ Checklist completo de validação
+- ✅ Testes de todos os endpoints
+- ✅ Validação de segurança e performance
+- ✅ Problemas comuns e soluções
+- ✅ Relatório de validação
+
+### Ordem Recomendada
+
+1. **Validar Backend Local** → `VALIDATION_STEPS.md`
+2. **Deploy no Railway** → `DEPLOY_RAILWAY.md`
+3. **Migrar Frontend** → `MIGRATION_GUIDE.md`
+4. **Testes End-to-End** → Validar integração completa
+
+---
+
 ## 📞 Referências
 
 - [Documentação Helena - Autenticação](https://helena.readme.io/reference/getting-started-with-your-api)

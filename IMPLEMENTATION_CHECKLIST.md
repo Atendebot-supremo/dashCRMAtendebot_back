@@ -4,7 +4,9 @@
 
 - [x] Backend Criado
 - [x] Endpoints Implementados
-- [ ] Testes Realizados
+- [x] Tabela Supabase Criada
+- [x] Usuário de Teste Inserido
+- [ ] **Validação Completa** → Ver `VALIDATION_STEPS.md`
 - [ ] Deploy Backend Concluído
 - [ ] Frontend Migrado
 - [ ] Deploy Frontend Concluído
@@ -322,6 +324,31 @@
 
 ---
 
+---
+
+## 🎯 Próximos Passos
+
+### 1. Validação (Agora) ⭐
+- [ ] Seguir `VALIDATION_STEPS.md` completo
+- [ ] Testar todos os endpoints
+- [ ] Validar autenticação
+- [ ] Validar integração com Helena
+- [ ] Verificar performance
+- [ ] Testar segurança
+
+### 2. Deploy
+- [ ] Seguir `DEPLOY_RAILWAY.md`
+- [ ] Configurar variáveis de ambiente
+- [ ] Testar em produção
+
+### 3. Frontend
+- [ ] Seguir `MIGRATION_GUIDE.md`
+- [ ] Atualizar cliente HTTP
+- [ ] Criar página de login
+- [ ] Testar integração completa
+
+---
+
 **Versão:** 2.0.0  
 **Última Atualização:** Novembro 2024  
-**Status:** 🔄 Backend Completo, Deploy Pendente
+**Status:** 🔄 Backend Completo, Validação Pendente
