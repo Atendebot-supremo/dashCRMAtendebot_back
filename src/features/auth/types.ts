@@ -1,6 +1,7 @@
-// Request para login via telefone
+// Request para login via telefone ou email
 export interface LoginRequest {
-  phone: string
+  phone?: string
+  email?: string
 }
 
 // Resposta da API Helena /auth/v1/login/authenticate/external

@@ -18,18 +18,33 @@ const loginLimiter = rateLimit({
   }
 })
 
-// Validação do telefone
+// Validação do login (telefone ou email)
 const validateLoginRequest = [
   body('phone')
-    .notEmpty()
-    .withMessage('Telefone é obrigatório')
+    .optional()
     .isString()
     .withMessage('Telefone deve ser uma string')
     .trim()
     .isLength({ min: 10, max: 15 })
     .withMessage('Telefone deve ter entre 10 e 15 caracteres')
     .matches(/^[0-9+\-\s()]+$/)
-    .withMessage('Telefone contém caracteres inválidos')
+    .withMessage('Telefone contém caracteres inválidos'),
+  body('email')
+    .optional()
+    .isString()
+    .withMessage('Email deve ser uma string')
+    .trim()
+    .isEmail()
+    .withMessage('Email inválido')
+    .normalizeEmail(),
+  body()
+    .custom((value) => {
+      // Pelo menos um dos campos (phone ou email) deve estar presente
+      if (!value.phone && !value.email) {
+        throw new Error('Telefone ou email é obrigatório')
+      }
+      return true
+    })
 ]
 
 /**

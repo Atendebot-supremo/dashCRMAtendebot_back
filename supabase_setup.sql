@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users_dashcrmatendebot (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
   phone VARCHAR(20) NOT NULL UNIQUE,
+  email VARCHAR(255),
   helena_token VARCHAR(255) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   active BOOLEAN DEFAULT true
@@ -17,6 +18,11 @@ CREATE TABLE IF NOT EXISTS users_dashcrmatendebot (
 CREATE INDEX IF NOT EXISTS idx_users_dashcrm_phone 
 ON users_dashcrmatendebot(phone);
 
+-- Criar índice para busca por email (performance)
+CREATE INDEX IF NOT EXISTS idx_users_dashcrm_email 
+ON users_dashcrmatendebot(email) 
+WHERE email IS NOT NULL;
+
 -- Criar índice para busca por status ativo
 CREATE INDEX IF NOT EXISTS idx_users_dashcrm_active 
 ON users_dashcrmatendebot(active);
@@ -24,6 +30,7 @@ ON users_dashcrmatendebot(active);
 -- Comentários na tabela
 COMMENT ON TABLE users_dashcrmatendebot IS 'Usuários autorizados a acessar o dashboard CRM';
 COMMENT ON COLUMN users_dashcrmatendebot.phone IS 'Telefone no formato internacional (ex: 5531999999999)';
+COMMENT ON COLUMN users_dashcrmatendebot.email IS 'Email do usuário (opcional, usado para login alternativo)';
 COMMENT ON COLUMN users_dashcrmatendebot.helena_token IS 'Token permanente da API Helena para este cliente';
 
 -- =============================================
@@ -31,10 +38,11 @@ COMMENT ON COLUMN users_dashcrmatendebot.helena_token IS 'Token permanente da AP
 -- Descomente e ajuste conforme necessário
 -- =============================================
 
--- INSERT INTO users_dashcrmatendebot (name, phone, helena_token, active)
+-- INSERT INTO users_dashcrmatendebot (name, phone, email, helena_token, active)
 -- VALUES (
 --   'Maxchip',
 --   '5531999999999',
+--   '[email protected]',
 --   'pn_mh3AGdH9Exo8PsLsEQjRvg80IB66FEOieyPJlKaCxk',
 --   true
 -- );

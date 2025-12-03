@@ -9,10 +9,11 @@ export class AuthController {
    * @swagger
    * /api/auth/login:
    *   post:
-   *     summary: Realiza login do cliente via telefone
+   *     summary: Realiza login do cliente via telefone ou email
    *     description: |
-   *       Autentica o usuário usando o telefone. O backend busca o usuário no Supabase,
+   *       Autentica o usuário usando telefone e/ou email. O backend busca o usuário no Supabase,
    *       valida na API Helena e retorna tokens de acesso.
+   *       Pode enviar telefone, email ou ambos conforme documentação da API Helena.
    *     tags: [Auth]
    *     requestBody:
    *       required: true
@@ -20,13 +21,17 @@ export class AuthController {
    *         application/json:
    *           schema:
    *             type: object
-   *             required:
-   *               - phone
    *             properties:
    *               phone:
    *                 type: string
    *                 description: Telefone no formato brasileiro (com ou sem DDI)
    *                 example: "31999999999"
+   *               email:
+   *                 type: string
+   *                 description: Email do usuário
+   *                 example: "[email protected]"
+   *             required:
+   *               - phone ou email (pelo menos um deve ser enviado)
    *     responses:
    *       200:
    *         description: Login realizado com sucesso
@@ -65,7 +70,7 @@ export class AuthController {
    *       400:
    *         description: Dados inválidos
    *       401:
-   *         description: Telefone não encontrado ou inativo
+   *         description: Telefone/email não encontrado ou inativo
    *       502:
    *         description: Erro na comunicação com a API Helena
    */
@@ -78,16 +83,20 @@ export class AuthController {
       )
     }
 
-    const { phone } = req.body as LoginRequest
+    const { phone, email } = req.body as LoginRequest
 
-    if (!phone?.trim()) {
+    // Validar que pelo menos um campo foi enviado
+    if (!phone?.trim() && !email?.trim()) {
       return res.status(400).json(
-        createErrorResponse('Telefone é obrigatório', ErrorCode.INVALID_INPUT)
+        createErrorResponse(
+          'Telefone ou email é obrigatório',
+          ErrorCode.INVALID_INPUT
+        )
       )
     }
 
     try {
-      const result = await authService.login(phone)
+      const result = await authService.login(phone, email)
 
       return res.status(200).json(
         createSuccessResponse(result, 'Login realizado com sucesso')

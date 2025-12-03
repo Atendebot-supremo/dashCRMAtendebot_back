@@ -28,6 +28,7 @@ export interface UserDashCRM {
   id: string
   name: string
   phone: string
+  email?: string
   helena_token: string
   created_at: string
   active: boolean
@@ -79,6 +80,34 @@ export const getUserById = async (id: string): Promise<UserDashCRM | null> => {
       return null
     }
     console.error('[supabase] Erro ao buscar usuário por ID:', error)
+    return null
+  }
+
+  return data as UserDashCRM
+}
+
+// Função para buscar usuário pelo email
+export const getUserByEmail = async (email: string): Promise<UserDashCRM | null> => {
+  if (!email?.trim()) {
+    return null
+  }
+
+  // Normalizar email (lowercase, trim)
+  const normalizedEmail = email.trim().toLowerCase()
+
+  const { data, error } = await supabase
+    .from('users_dashcrmatendebot')
+    .select('*')
+    .eq('email', normalizedEmail)
+    .eq('active', true)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // Nenhum registro encontrado
+      return null
+    }
+    console.error('[supabase] Erro ao buscar usuário por email:', error)
     return null
   }
 
