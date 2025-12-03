@@ -67,10 +67,27 @@ export interface User {
   role?: string
 }
 
-export interface Channel {
+export interface AgentDepartment {
+  agentId: string
+  departmentId: string
+  isAgent: boolean
+  isSupervisor: boolean
+}
+
+export interface Agent {
   id: string
+  createdAt?: string
+  updatedAt?: string
+  companyId?: string
+  userId: string
   name: string
-  type?: string
+  shortName?: string
+  email?: string
+  phoneNumber?: string
+  phoneNumberFormatted?: string
+  profile?: string
+  isOwner?: boolean
+  departments?: AgentDepartment[]
 }
 
 export interface CardFilters {

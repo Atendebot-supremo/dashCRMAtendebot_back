@@ -32,13 +32,15 @@ const validateGetCards = [
 const validatePanelId = [param('id').notEmpty().withMessage('ID do painel é obrigatório')]
 
 const validateCardId = [param('id').notEmpty().withMessage('ID do card é obrigatório')]
+const validateAgentId = [param('id').notEmpty().withMessage('ID do agente é obrigatório')]
+const validateGetAgents = [query('panelId').notEmpty().withMessage('panelId é obrigatório')]
 
 router.get('/panels', controller.getPanels)
 router.get('/panels/:id', validatePanelId, controller.getPanelById)
 router.get('/cards', validateGetCards, controller.getCards)
 router.get('/cards/:id', validateCardId, controller.getCardById)
-router.get('/users', controller.getUsers)
-router.get('/channels', controller.getChannels)
+router.get('/agents', validateGetAgents, controller.getAgents)
+router.get('/agents/:id', validateAgentId, controller.getAgentById)
 
 export default router
 

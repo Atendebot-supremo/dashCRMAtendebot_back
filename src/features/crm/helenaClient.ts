@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios'
-import type { Panel, Card, CardsResponse, PanelsResponse, CardFilters } from './types'
+import type { Panel, Card, CardsResponse, PanelsResponse, CardFilters, Agent } from './types'
 
 interface HelenaConfig {
   baseURL: string
@@ -54,6 +54,11 @@ export class HelenaClient {
 
   async getCardById(cardId: string): Promise<Card> {
     const { data } = await this.client.get<Card>(`/crm/v1/panel/card/${cardId}`)
+    return data
+  }
+
+  async getAgentById(agentId: string): Promise<Agent> {
+    const { data } = await this.client.get<Agent>(`/core/v1/agent/${agentId}`)
     return data
   }
 

@@ -1,6 +1,6 @@
 import HelenaClient from './helenaClient'
 import { getHelenaToken, helenaConfig } from '../../config/helena'
-import type { Panel, Card, CardsResponse, PanelsResponse, CardFilters, User, Channel } from './types'
+import type { Panel, Card, CardsResponse, PanelsResponse, CardFilters, User, Agent } from './types'
 
 export class CrmService {
   // Agora é assíncrono pois busca token do Supabase
@@ -61,43 +61,56 @@ export class CrmService {
     return await client.getCardById(cardId)
   }
 
-  async getUsers(userId: string): Promise<{ items: User[]; totalItems: number }> {
+  async getAgentById(userId: string, agentId: string): Promise<Agent> {
     const client = await this.getClient(userId)
-    const cardsResponse = await client.getCards({ panelId: '' })
-
-    const usersMap = new Map<string, User>()
-
-    if (cardsResponse.items) {
-      cardsResponse.items.forEach((card) => {
-        if (card.responsibleUser && card.responsibleUserId) {
-          if (!usersMap.has(card.responsibleUserId)) {
-            usersMap.set(card.responsibleUserId, card.responsibleUser)
-          }
-        }
-      })
-    }
-
-    return {
-      items: Array.from(usersMap.values()),
-      totalItems: usersMap.size
-    }
+    return await client.getAgentById(agentId)
   }
 
-  async getChannels(_userId: string): Promise<{ items: Channel[]; totalItems: number }> {
-    // Canais são estáticos por enquanto
-    const channels: Channel[] = [
-      { id: 'meta', name: 'Meta (Facebook/Instagram)', type: 'meta' },
-      { id: 'google', name: 'Google Ads', type: 'google' },
-      { id: 'whatsapp', name: 'WhatsApp', type: 'whatsapp' },
-      { id: 'instagram', name: 'Instagram', type: 'instagram' },
-      { id: 'telegram', name: 'Telegram', type: 'telegram' },
-      { id: 'website', name: 'Website', type: 'website' },
-      { id: 'email', name: 'E-mail', type: 'email' }
-    ]
+  async getAgentsByPanel(userId: string, panelId: string): Promise<{ items: Agent[]; totalItems: number }> {
+    const client = await this.getClient(userId)
+
+    // Buscar todos os cards do painel para extrair os IDs dos responsáveis
+    // A API Helena só aceita pageSize entre 1 e 100, então precisamos paginar
+    const responsibleUserIds = new Set<string>()
+    let page = 1
+    const pageSize = 100
+    let hasMorePages = true
+
+    while (hasMorePages) {
+      const cardsResponse = await client.getCards({ panelId, page, pageSize })
+
+      if (cardsResponse.items && cardsResponse.items.length > 0) {
+        cardsResponse.items.forEach((card) => {
+          // A API Helena retorna responsibleUser: null, mas tem o responsibleUserId
+          if (card.responsibleUserId) {
+            responsibleUserIds.add(card.responsibleUserId)
+          }
+        })
+
+        // Verificar se há mais páginas
+        const totalPages = cardsResponse.totalPages ?? Math.ceil((cardsResponse.totalItems ?? 0) / pageSize)
+        hasMorePages = page < totalPages
+        page++
+      } else {
+        hasMorePages = false
+      }
+    }
+
+    // Buscar detalhes de cada agente via /core/v1/agent/{userId}
+    const agents: Agent[] = []
+    for (const responsibleUserId of responsibleUserIds) {
+      try {
+        const agent = await client.getAgentById(responsibleUserId)
+        agents.push(agent)
+      } catch (error) {
+        console.error(`[crm-service] Erro ao buscar agente ${responsibleUserId}:`, error)
+        // Continua para o próximo agente mesmo se um falhar
+      }
+    }
 
     return {
-      items: channels,
-      totalItems: channels.length
+      items: agents,
+      totalItems: agents.length
     }
   }
 }

@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { Response } from 'express'
 import { validationResult } from 'express-validator'
 import { CrmService } from './crmService'
@@ -262,79 +263,109 @@ export default class CrmController {
 
   /**
    * @swagger
-   * /api/crm/users:
+   * /api/crm/agents:
    *   get:
-   *     summary: Lista usuários/vendedores
+   *     summary: Lista agentes/responsáveis de um painel
    *     tags: [CRM]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: query
+   *         name: panelId
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: ID do painel para listar os agentes
    *     responses:
    *       200:
-   *         description: Lista de usuários
+   *         description: Lista de agentes únicos do painel
+   *       400:
+   *         description: panelId não informado
    */
-  getUsers = async (req: AuthRequest, res: Response) => {
+  getAgents = async (req: AuthRequest, res: Response) => {
     try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res
+          .status(400)
+          .json(createErrorResponse('Dados de entrada inválidos', ErrorCode.INVALID_INPUT, errors.array()))
+      }
+
       const clientId = req.context?.user?.id
+      const { panelId } = req.query
 
       if (!clientId) {
         return res.status(401).json(createErrorResponse('Cliente não autenticado', ErrorCode.UNAUTHORIZED))
       }
 
-      const usersResponse = await this.service.getUsers(clientId)
+      if (!panelId) {
+        return res.status(400).json(createErrorResponse('panelId é obrigatório', ErrorCode.INVALID_INPUT))
+      }
 
-      return res.status(200).json(
-        createSuccessResponse(
-          {
-            items: usersResponse.items,
-            totalItems: usersResponse.totalItems
-          },
-          'Usuários listados com sucesso'
-        )
-      )
+      const agents = await this.service.getAgentsByPanel(clientId, panelId as string)
+
+      return res.status(200).json(createSuccessResponse(agents, 'Agentes listados com sucesso'))
     } catch (error) {
-      console.error('[crm-controller] Erro ao listar usuários:', error)
+      console.error('[crm-controller] Erro ao listar agentes:', error)
       return res
         .status(500)
-        .json(createErrorResponse('Erro ao buscar usuários', ErrorCode.INTERNAL_SERVER_ERROR))
+        .json(createErrorResponse('Erro ao buscar agentes', ErrorCode.INTERNAL_SERVER_ERROR))
     }
   }
 
   /**
    * @swagger
-   * /api/crm/channels:
+   * /api/crm/agents/{id}:
    *   get:
-   *     summary: Lista canais de comunicação
+   *     summary: Obter detalhes de um agente/atendente
    *     tags: [CRM]
    *     security:
    *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
    *     responses:
    *       200:
-   *         description: Lista de canais
+   *         description: Detalhes do agente
+   *       404:
+   *         description: Agente não encontrado
    */
-  getChannels = async (req: AuthRequest, res: Response) => {
+  getAgentById = async (req: AuthRequest, res: Response) => {
     try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res
+          .status(400)
+          .json(createErrorResponse('Dados de entrada inválidos', ErrorCode.INVALID_INPUT, errors.array()))
+      }
+
       const clientId = req.context?.user?.id
+      const agentId = req.params.id
 
       if (!clientId) {
         return res.status(401).json(createErrorResponse('Cliente não autenticado', ErrorCode.UNAUTHORIZED))
       }
 
-      const channelsResponse = await this.service.getChannels(clientId)
+      if (!agentId) {
+        return res.status(400).json(createErrorResponse('ID do agente é obrigatório', ErrorCode.INVALID_INPUT))
+      }
 
-      return res.status(200).json(
-        createSuccessResponse(
-          {
-            items: channelsResponse.items,
-            totalItems: channelsResponse.totalItems
-          },
-          'Canais listados com sucesso'
-        )
-      )
+      const agent = await this.service.getAgentById(clientId, agentId)
+
+      return res.status(200).json(createSuccessResponse(agent, 'Agente encontrado com sucesso'))
     } catch (error) {
-      console.error('[crm-controller] Erro ao listar canais:', error)
+      console.error('[crm-controller] Erro ao buscar agente:', error)
+
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        return res.status(404).json(createErrorResponse('Agente não encontrado', ErrorCode.NOT_FOUND))
+      }
+
       return res
         .status(500)
-        .json(createErrorResponse('Erro ao buscar canais', ErrorCode.INTERNAL_SERVER_ERROR))
+        .json(createErrorResponse('Erro ao buscar agente', ErrorCode.INTERNAL_SERVER_ERROR))
     }
   }
 }
