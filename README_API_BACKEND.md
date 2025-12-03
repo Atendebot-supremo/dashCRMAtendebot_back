@@ -18,10 +18,8 @@ Criar uma API intermediária entre a plataforma Helena/flw.chat e o dashboard CR
 |-----------|-----------|-----------|
 | **API_DOCUMENTATION.md** | Documentação completa da API com todos os endpoints, estruturas de código, exemplos | Backend Developer |
 | **MIGRATION_GUIDE.md** | Guia passo-a-passo para migrar o frontend | Frontend Developer |
-| **DEPLOY_RAILWAY.md** | Guia completo de deploy no Railway com variáveis de ambiente e troubleshooting | DevOps / Deploy |
-| **_START_HERE.md** | Índice geral e guia de início rápido de todos os documentos | Todos |
-| **IMPLEMENTATION_CHECKLIST.md** | Checklist detalhado de todas as fases de implementação | Todos |
 | **README_API_BACKEND.md** | Este arquivo - visão geral e início rápido | Project Manager |
+| **supabase_setup.sql** | SQL para criar tabela no Supabase | DBA |
 
 ---
 
@@ -53,78 +51,79 @@ Criar uma API intermediária entre a plataforma Helena/flw.chat e o dashboard CR
 │  └──────────┬──────────┘   │
 └─────────────┼──────────────┘
               │
-   ┌──────────▼──────────┐
-   │  API Helena/flw.chat│
-   │  (Externa)          │
-   └─────────────────────┘
+   ┌──────────▼──────────┐    ┌─────────────────┐
+   │  API Helena/flw.chat│    │    Supabase     │
+   │  (Externa)          │    │  (PostgreSQL)   │
+   └─────────────────────┘    └─────────────────┘
 ```
 
 ---
 
 ## 🚀 Início Rápido
 
-### Passo 1: Criar Projeto Backend
+### Passo 1: Clonar e Instalar
 
 ```bash
-mkdir dashCRMAtendebot_back
 cd dashCRMAtendebot_back
-npm init -y
+npm install
 ```
 
-### Passo 2: Instalar Dependências
+### Passo 2: Configurar .env
 
-```bash
-# Principais
-npm i express cors helmet express-rate-limit express-session jsonwebtoken swagger-jsdoc swagger-ui-express dotenv axios
-
-# TypeScript
-npm i -D typescript ts-node-dev @types/express @types/cors @types/helmet @types/express-rate-limit @types/express-session @types/jsonwebtoken @types/node @types/swagger-ui-express
-
-# Inicializar TypeScript
-npx tsc --init
-```
-
-### Passo 3: Criar Estrutura
-
-```bash
-mkdir -p src/{config,features/{auth,crm,metrics},middleware,types,utils}
-mkdir public
-```
-
-### Passo 4: Configurar package.json
-
-```json
-{
-  "scripts": {
-    "dev": "ts-node-dev --transpile-only --exit-child src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js"
-  }
-}
-```
-
-### Passo 5: Criar .env
+Crie o arquivo `.env` na raiz do projeto:
 
 ```env
+# =============================================
+# CONFIGURAÇÃO DO SERVIDOR
+# =============================================
 PORT=3000
 NODE_ENV=development
-JWT_SECRET=seu-jwt-secret-super-seguro
-HELENA_API_URL=https://api.flw.chat
-HELENA_TOKENS='[{"clientId":"maxchip","token":"pn_mh3AGdH9Exo8PsLsEQjRvg80IB66FEOieyPJlKaCxk"}]'
+
+# =============================================
+# SEGURANÇA - JWT
+# =============================================
+JWT_SECRET=dashCRM-jwt-secret-key-2024-segura
+
+# =============================================
+# SUPABASE
+# =============================================
+SUPABASE_URL=https://supabase.labfy.co
+SUPABASE_SERVICE_KEY=sua-service-key-aqui
+
+# =============================================
+# API HELENA
+# =============================================
+HELENA_API_URL=https://api.helena.run
+
+# =============================================
+# CORS - Origens permitidas
+# =============================================
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# =============================================
+# CACHE (opcional)
+# =============================================
+CACHE_TTL=300000
 ```
 
-### Passo 6: Seguir API_DOCUMENTATION.md
+### Passo 3: Configurar Supabase
 
-Abra `API_DOCUMENTATION.md` e implemente:
-1. Configuração Helena
-2. Helena Client
-3. CRM Service
-4. Metrics Service
-5. Controllers
-6. Routes
-7. Server Bootstrap
+1. Acesse o Supabase Studio
+2. Vá em SQL Editor
+3. Execute o script `supabase_setup.sql`
+4. Insira um usuário de teste:
 
-### Passo 7: Testar
+```sql
+INSERT INTO users_dashcrmatendebot (name, phone, helena_token, active)
+VALUES (
+  'Cliente Teste',
+  '5531999999999',
+  'pn_seu_token_helena_aqui',
+  true
+);
+```
+
+### Passo 4: Rodar
 
 ```bash
 npm run dev
@@ -139,7 +138,7 @@ Acesse:
 ## 📊 Endpoints Principais
 
 ### Autenticação
-- `POST /api/auth/login` - Login do cliente
+- `POST /api/auth/login` - Login via telefone
 
 ### CRM
 - `GET /api/crm/panels` - Lista painéis
@@ -163,23 +162,42 @@ Acesse:
 
 ## 🔐 Autenticação
 
-### Fluxo
+### Fluxo de Login
 
-1. Cliente faz login com email/senha
-2. Backend valida e retorna JWT
-3. Frontend salva JWT no localStorage
-4. Todas as requisições incluem: `Authorization: Bearer <jwt>`
-5. Backend extrai `clientId` do JWT
-6. Backend usa token Helena específico do cliente
-7. Backend chama API Helena e retorna dados
+```
+1. Usuário digita TELEFONE no frontend
+              │
+              ▼
+2. Backend busca usuário no Supabase pelo telefone
+              │
+              ▼
+3. Backend obtém o helena_token do usuário
+              │
+              ▼
+4. Backend chama API Helena:
+   POST https://api.helena.run/auth/v1/login/authenticate/external
+   Authorization: Bearer <helena_token>
+   Body: { "phoneNumber": "5531999999999" }
+              │
+              ▼
+5. Helena retorna: accessToken, userId, tenantId
+              │
+              ▼
+6. Backend gera JWT próprio e retorna ao frontend
+              │
+              ▼
+7. Frontend salva JWT e usa em todas as requisições
+```
 
 ### Estrutura do JWT
 
 ```json
 {
-  "clientId": "maxchip",
-  "name": "MaxChip Telecom",
-  "email": "contato@maxchip.com",
+  "userId": "uuid-do-supabase",
+  "name": "Nome do Cliente",
+  "phone": "5531999999999",
+  "helenaUserId": "uuid-helena",
+  "tenantId": "tenant-id-helena",
   "role": "client",
   "iat": 1234567890,
   "exp": 1234567890
@@ -194,8 +212,8 @@ Acesse:
 dashCRMAtendebot_back/
 ├── src/
 │   ├── config/
-│   │   ├── helena.ts              # Configuração API Helena
-│   │   └── clients.ts             # Configuração de clientes
+│   │   ├── helena.ts           # Configuração API Helena
+│   │   └── supabase.ts         # Cliente Supabase
 │   ├── features/
 │   │   ├── auth/
 │   │   │   ├── authRoutes.ts
@@ -214,24 +232,19 @@ dashCRMAtendebot_back/
 │   │       ├── metricsService.ts
 │   │       └── types.ts
 │   ├── middleware/
-│   │   └── auth.middleware.ts     # Middleware JWT
+│   │   └── auth.middleware.ts
 │   ├── types/
-│   │   └── index.ts               # Tipos globais
+│   │   └── index.ts
 │   ├── utils/
-│   │   ├── calculations.ts        # Funções de cálculo
-│   │   └── cache.ts               # Cache in-memory
-│   └── server.ts                  # Bootstrap do servidor
-├── dist/                          # Build TypeScript (gerado)
-├── .env                           # Variáveis de ambiente (não commitado)
-├── .env.example                   # Exemplo de variáveis
+│   │   ├── calculations.ts
+│   │   └── cache.ts
+│   └── server.ts
+├── .env
 ├── .gitignore
-├── .dockerignore                  # Arquivos ignorados no Docker
 ├── package.json
-├── package-lock.json
 ├── tsconfig.json
-├── Dockerfile                     # Docker para deploy
-├── railway.json                   # Configuração Railway
-├── DEPLOY_RAILWAY.md              # Guia de deploy
+├── Dockerfile
+├── supabase_setup.sql
 └── README.md
 ```
 
@@ -239,22 +252,36 @@ dashCRMAtendebot_back/
 
 ## 🧪 Testando a API
 
-### 1. Login
+### 1. Login (via Telefone)
 
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"contato@maxchip.com","password":"senha-segura"}'
+  -d '{"phone": "31999999999"}'
 ```
 
-### 2. Copiar Token da Response
+### 2. Resposta do Login
 
 ```json
 {
   "success": true,
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "helena": {
+      "accessToken": "eyJhbGciOi...",
+      "userId": "uuid-helena",
+      "tenantId": "tenant-id",
+      "expiresIn": "2024-01-01T00:00:00Z",
+      "refreshToken": "rf_xxxxx",
+      "urlRedirect": "https://..."
+    },
+    "user": {
+      "id": "uuid-supabase",
+      "name": "Nome do Cliente",
+      "phone": "5531999999999"
+    }
+  },
+  "message": "Login realizado com sucesso"
 }
 ```
 
@@ -272,14 +299,7 @@ curl "http://localhost:3000/api/crm/cards?panelId=PANEL_ID" \
   -H "Authorization: Bearer SEU_TOKEN_AQUI"
 ```
 
-### 5. Testar Métricas
-
-```bash
-curl "http://localhost:3000/api/metrics/funnel?panelId=PANEL_ID" \
-  -H "Authorization: Bearer SEU_TOKEN_AQUI"
-```
-
-### 6. Dashboard Completo
+### 5. Dashboard Completo
 
 ```bash
 curl "http://localhost:3000/api/metrics/dashboard?panelId=PANEL_ID&startDate=2024-01-01&endDate=2024-01-31" \
@@ -291,15 +311,16 @@ curl "http://localhost:3000/api/metrics/dashboard?panelId=PANEL_ID&startDate=202
 ## 🎨 Frontend - Exemplo de Uso
 
 ```typescript
-// Login
-const handleLogin = async () => {
+// Login via Telefone
+const handleLogin = async (phone: string) => {
   const response = await fetch('http://localhost:3000/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
+    body: JSON.stringify({ phone })
   })
   const data = await response.json()
   localStorage.setItem('authToken', data.data.token)
+  return data.data
 }
 
 // Buscar Painéis
@@ -327,235 +348,71 @@ const fetchDashboard = async (filters) => {
 
 ---
 
+## 🗄️ Banco de Dados (Supabase)
+
+### Tabela: users_dashcrmatendebot
+
+| Coluna | Tipo | Descrição |
+|--------|------|-----------|
+| id | UUID | Identificador único (auto-gerado) |
+| name | VARCHAR(255) | Nome do cliente/empresa |
+| phone | VARCHAR(20) | Telefone (único, usado no login) |
+| helena_token | VARCHAR(255) | Token permanente da API Helena |
+| created_at | TIMESTAMP | Data de criação |
+| active | BOOLEAN | Se o usuário está ativo |
+
+### SQL de Criação
+
+```sql
+CREATE TABLE users_dashcrmatendebot (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(20) NOT NULL UNIQUE,
+  helena_token VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  active BOOLEAN DEFAULT true
+);
+
+CREATE INDEX idx_users_dashcrm_phone ON users_dashcrmatendebot(phone);
+```
+
+---
+
 ## 🚀 Deploy
 
-### Status Atual
+### Railway
 
-✅ **Backend completamente implementado**  
-✅ **Dockerfile configurado**  
-✅ **Railway.json configurado**  
-✅ **Branch `dev` criada para desenvolvimento**  
-✅ **Branch `main` pronta para produção**  
-
-### Railway (Recomendado)
-
-O projeto está pronto para deploy no Railway. Consulte o arquivo **DEPLOY_RAILWAY.md** para instruções completas.
-
-**Resumo:**
 1. **Criar novo projeto na Railway**
 2. **Conectar repositório GitHub**
-3. **Selecionar branch** (`main` para produção, `dev` para testes)
-4. **Definir variáveis de ambiente** (ver `DEPLOY_RAILWAY.md`)
-5. **Deploy automático via Dockerfile**
-
-**Variáveis de Ambiente Obrigatórias:**
-```
-PORT=3000
-NODE_ENV=production
-JWT_SECRET=seu-jwt-secret-super-seguro
-HELENA_API_URL=https://api.flw.chat
-HELENA_TOKENS=[{"clientId":"maxchip","token":"pn_..."}]
-CLIENTS_CONFIG=[{"clientId":"maxchip","name":"...","email":"...","passwordHash":"$2b$10$..."}]
-CACHE_TTL=300000
-```
-
-### Estrutura de Branches
-
-- **`main`**: Branch de produção (deploy automático)
-- **`dev`**: Branch de desenvolvimento (testes e features)
-
-**Fluxo recomendado:**
-```bash
-# Desenvolvimento
-git checkout dev
-# ... fazer alterações ...
-git commit -m "feat: nova funcionalidade"
-git push origin dev
-
-# Quando pronto para produção
-git checkout main
-git merge dev
-git push origin main  # Railway faz deploy automático
-```
+3. **Definir variáveis de ambiente:**
+   ```
+   PORT=3000
+   NODE_ENV=production
+   JWT_SECRET=seu-jwt-secret-super-seguro
+   SUPABASE_URL=https://supabase.labfy.co
+   SUPABASE_SERVICE_KEY=sua-service-key
+   HELENA_API_URL=https://api.helena.run
+   CORS_ORIGINS=https://seu-frontend.com
+   ```
+4. **Deploy automático**
 
 ### Dockerfile
 
-O Dockerfile está configurado e pronto:
-
 ```dockerfile
 FROM node:18-alpine
-WORKDIR /usr/src/app
+
+WORKDIR /app
+
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --only=production
+
 COPY . .
 RUN npm run build
-RUN npm prune --production
+
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+
+CMD ["node", "dist/server.js"]
 ```
-
----
-
-## ✅ Checklist de Implementação
-
-### Configuração Inicial
-- [x] Criar projeto Node.js + TypeScript
-- [x] Instalar dependências
-- [x] Criar estrutura de pastas
-- [x] Configurar .env e .env.example
-
-### Tipos e Utilitários
-- [x] Tipos globais (APIResponse, ErrorCode, etc.)
-- [x] Configuração Helena (getHelenaToken)
-- [x] Utilitários de cache (node-cache)
-- [x] Funções de cálculo (calculations.ts)
-
-### Autenticação
-- [x] Implementar login com JWT
-- [x] Auth Service (validação e geração de token)
-- [x] Auth Controller e Routes
-- [x] Middleware de autenticação JWT
-- [x] Configuração de clientes (clients.ts)
-
-### CRM
-- [x] Helena Client (Axios com interceptors)
-- [x] CRM Service (getPanels, getCards, etc.)
-- [x] CRM Controller (6 endpoints)
-- [x] CRM Routes com validação
-- [x] Rate limiting configurado
-
-### Métricas
-- [x] Types de métricas completos
-- [x] Metrics Service (8 métodos de cálculo)
-- [x] Metrics Controller (8 endpoints)
-- [x] Metrics Routes com validação
-- [x] Cálculos: funil, receita, conversão, perdas, temporal, vendedor, produtos, dashboard
-
-### Server Bootstrap
-- [x] Express server configurado
-- [x] Middlewares globais (CORS, Helmet, Rate Limiting)
-- [x] Swagger/OpenAPI documentação completa
-- [x] Health endpoints (/health, /ready, /live)
-- [x] Error handling global
-- [x] Graceful shutdown
-
-### Deploy e Infraestrutura
-- [x] Dockerfile configurado
-- [x] railway.json configurado
-- [x] .dockerignore configurado
-- [x] DEPLOY_RAILWAY.md criado
-- [x] Branch `dev` criada para desenvolvimento
-- [x] Branch `main` pronta para produção
-- [x] Código enviado para repositório
-
-### Documentação
-- [x] README_API_BACKEND.md atualizado
-- [x] API_DOCUMENTATION.md completo
-- [x] MIGRATION_GUIDE.md completo
-- [x] IMPLEMENTATION_CHECKLIST.md completo
-- [x] DEPLOY_RAILWAY.md completo
-- [x] _START_HERE.md com índice geral
-
-### Status Final
-✅ **Backend 100% implementado e funcional**  
-✅ **14 endpoints completos e testados**  
-✅ **Swagger documentação completa**  
-✅ **Pronto para deploy no Railway**
-
----
-
-## 📖 Leitura Recomendada
-
-1. **API_DOCUMENTATION.md** (⭐ Mais importante)
-   - Documentação completa de todos os endpoints
-   - Estruturas de código prontas
-   - Exemplos detalhados
-
-2. **MIGRATION_GUIDE.md**
-   - Como migrar o frontend
-   - Código antes/depois
-   - Checklist de migração
-
-3. **QUICK_REFERENCE.md**
-   - Referência rápida
-   - Tabelas de endpoints
-   - Exemplos curl
-   - Hooks React Query
-
----
-
-## 🤝 Suporte
-
-Para implementação:
-1. Siga **API_DOCUMENTATION.md** passo a passo
-2. Use os exemplos de código fornecidos
-3. Teste cada endpoint antes de prosseguir
-4. Consulte **QUICK_REFERENCE.md** para dúvidas rápidas
-
----
-
-## 🎯 Próximos Passos
-
-### ✅ Fase 1: Backend (COMPLETO)
-1. ✅ Ler esta documentação
-2. ✅ Criar projeto seguindo `API_DOCUMENTATION.md`
-3. ✅ Implementar todos os endpoints (14 endpoints)
-4. ✅ Testar com Postman/Insomnia
-5. ✅ Preparar deploy no Railway (Dockerfile, railway.json)
-
-### 📋 Fase 2: Frontend (PRÓXIMO)
-1. ⏳ Seguir `MIGRATION_GUIDE.md`
-2. ⏳ Atualizar código do frontend para consumir nova API
-3. ⏳ Implementar página de login
-4. ⏳ Atualizar hooks React Query
-5. ⏳ Testar integração end-to-end
-6. ⏳ Deploy frontend no Railway
-
-### 🚀 Fase 3: Deploy e Produção
-1. ⏳ Configurar projeto no Railway (usar branch `main`)
-2. ⏳ Configurar variáveis de ambiente no Railway
-3. ⏳ Fazer deploy e testar endpoints em produção
-4. ⏳ Configurar domínio customizado (opcional)
-5. ⏳ Configurar monitoramento e logs
-6. ⏳ Adicionar novos clientes conforme necessário
-
-### 📝 Fase 4: Documentação e Manutenção
-1. ✅ Documentação técnica completa
-2. ✅ Guias de deploy atualizados
-3. ⏳ Testes de integração automatizados (futuro)
-4. ⏳ CI/CD pipeline (futuro)
-
----
-
-## 📊 Estimativa de Tempo
-
-| Fase | Tempo Estimado | Prioridade |
-|------|---------------|-----------|
-| Setup inicial | 1-2 horas | 🔴 Alta |
-| Autenticação | 2-3 horas | 🔴 Alta |
-| CRM Endpoints | 3-4 horas | 🔴 Alta |
-| Métricas | 4-5 horas | 🟡 Média |
-| Testes | 2-3 horas | 🟡 Média |
-| Deploy | 1-2 horas | 🔴 Alta |
-| **Total** | **13-19 horas** | |
-
----
-
-## 🏆 Benefícios
-
-### Antes (Frontend → API Helena)
-- ❌ Token exposto no frontend
-- ❌ Lógica de cálculo no frontend
-- ❌ Múltiplas requisições por página
-- ❌ Cache apenas no frontend
-- ❌ Difícil adicionar novos clientes
-
-### Depois (Frontend → API Intermediária → API Helena)
-- ✅ Token seguro no backend
-- ✅ Lógica centralizada no backend
-- ✅ Uma requisição (dashboard completo)
-- ✅ Cache no backend + frontend
-- ✅ Multi-tenancy fácil
 
 ---
 
@@ -567,61 +424,47 @@ Para implementação:
 - **Linguagem**: TypeScript
 - **Autenticação**: JWT (jsonwebtoken)
 - **HTTP Client**: Axios
+- **Banco de Dados**: Supabase (PostgreSQL)
 - **Documentação**: Swagger (swagger-ui-express)
 - **Segurança**: Helmet, CORS, Rate Limiting
-- **Logs**: Winston (opcional)
-- **Cache**: Redis ou in-memory (node-cache)
+- **Cache**: node-cache
 
-### Frontend
-- **Framework**: React 18+ com Vite
-- **Linguagem**: TypeScript
-- **State Management**: TanStack Query
-- **Estilo**: TailwindCSS + Radix UI
-- **Charts**: Tremor + Recharts
+### Integrações
+- **Helena API**: https://api.helena.run
+- **Supabase**: https://supabase.labfy.co
 
 ---
 
-## 📞 Contato
+## ✅ Próximos Passos de Validação
 
-Para dúvidas sobre a implementação:
-- Consulte primeiro a **API_DOCUMENTATION.md**
-- Use os exemplos de código fornecidos
-- Teste incrementalmente cada funcionalidade
+Após configurar o backend, siga o checklist completo em:
+
+**📋 [VALIDATION_STEPS.md](VALIDATION_STEPS.md)** ⭐
+
+Este documento contém:
+- ✅ Checklist completo de validação
+- ✅ Testes de todos os endpoints
+- ✅ Validação de segurança e performance
+- ✅ Problemas comuns e soluções
+- ✅ Relatório de validação
+
+### Ordem Recomendada
+
+1. **Validar Backend Local** → `VALIDATION_STEPS.md`
+2. **Deploy no Railway** → `DEPLOY_RAILWAY.md`
+3. **Migrar Frontend** → `MIGRATION_GUIDE.md`
+4. **Testes End-to-End** → Validar integração completa
 
 ---
 
-**Implementação completa! 🎉**
+## 📞 Referências
+
+- [Documentação Helena - Autenticação](https://helena.readme.io/reference/getting-started-with-your-api)
+- [Documentação Helena - Login Integrado](https://helena.readme.io/reference/login-integrado)
+- [Supabase Documentation](https://supabase.com/docs)
 
 ---
 
-## 📊 Status do Projeto
-
-**Versão:** 1.0.0  
-**Status:** ✅ Implementação Completa  
+**Versão:** 2.0.0  
 **Data:** Novembro 2024  
-**Última Atualização:** Novembro 2024  
 **Projeto:** dashCRMAtendebot - Backend API
-
-### Endpoints Implementados
-
-- ✅ **1** endpoint de Autenticação
-- ✅ **6** endpoints de CRM
-- ✅ **8** endpoints de Métricas
-- ✅ **3** endpoints de Health
-- **Total: 18 endpoints funcionais**
-
-### Branches
-
-- **`main`**: Produção (deploy automático Railway)
-- **`dev`**: Desenvolvimento (testes e features)
-
-### Repositório
-
-- **GitHub:** https://github.com/Atendebot-supremo/dashCRMAtendebot_back
-- **Branch principal:** `main`
-- **Branch desenvolvimento:** `dev`
-
----
-
-**Pronto para produção! 🚀**
-

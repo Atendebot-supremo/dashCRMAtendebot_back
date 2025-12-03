@@ -7,6 +7,10 @@ export interface AuthenticatedUser {
   name: string
   email: string
   role: AuthRole
+  // Novos campos para integração Helena
+  phone?: string
+  helenaUserId?: string
+  tenantId?: string
 }
 
 export interface RequestContext {
@@ -106,7 +110,7 @@ export type WithPagination<T> = {
 export type AuthenticatedClient = {
   id: string
   name: string
-  email: string
+  phone: string
 }
 
 declare global {
@@ -120,4 +124,3 @@ declare global {
 export type RequestWithContext = Request & { context?: RequestContext }
 
 export {}
-

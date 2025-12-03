@@ -1,73 +1,35 @@
 import 'dotenv/config'
+import { getUserById } from './supabase'
 
-interface HelenaTokenConfig {
-  clientId: string
-  token: string
-}
-
-const parseHelenaTokens = (rawTokens: string | undefined): HelenaTokenConfig[] => {
-  if (!rawTokens) {
-    console.warn('[helena-config] Variável HELENA_TOKENS não definida.')
-    return []
-  }
-
-  try {
-    const parsed = JSON.parse(rawTokens) as unknown
-
-    if (!Array.isArray(parsed)) {
-      console.error('[helena-config] HELENA_TOKENS precisa ser um array JSON.')
-      return []
-    }
-
-    return parsed
-      .filter((entry): entry is HelenaTokenConfig => {
-        if (
-          typeof entry?.clientId !== 'string' ||
-          typeof entry?.token !== 'string' ||
-          !entry.clientId.trim() ||
-          !entry.token.trim()
-        ) {
-          console.error(
-            `[helena-config] Configuração inválida ignorada: ${JSON.stringify(entry)}`
-          )
-          return false
-        }
-
-        return true
-      })
-      .map((entry) => ({
-        clientId: entry.clientId.trim(),
-        token: entry.token.trim()
-      }))
-  } catch (error) {
-    console.error('[helena-config] Erro ao parsear HELENA_TOKENS:', error)
-    return []
-  }
-}
-
-const helenaTokens = parseHelenaTokens(process.env.HELENA_TOKENS)
-
+// URL base da API Helena
 export const helenaConfig = {
-  baseURL: process.env.HELENA_API_URL?.trim() || 'https://api.flw.chat'
+  baseURL: process.env.HELENA_API_URL?.trim() || 'https://api.helena.run'
 }
 
-export const getHelenaToken = (clientId: string): string => {
-  if (!clientId?.trim()) {
-    throw new Error('clientId inválido para recuperação do token Helena.')
+// Buscar token Helena do Supabase pelo ID do usuário
+export const getHelenaToken = async (userId: string): Promise<string> => {
+  if (!userId?.trim()) {
+    throw new Error('userId inválido para recuperação do token Helena.')
   }
 
-  const normalizedClientId = clientId.trim()
-  const tokenEntry = helenaTokens.find(
-    (entry) => entry.clientId.toLowerCase() === normalizedClientId.toLowerCase()
-  )
+  const user = await getUserById(userId)
 
-  if (tokenEntry?.token) {
-    return tokenEntry.token
+  if (!user) {
+    console.error(`[helena-config] Usuário não encontrado: ${userId}`)
+    throw new Error(`Usuário não encontrado: ${userId}`)
   }
 
-  console.error(`[helena-config] Token Helena não encontrado para cliente: ${normalizedClientId}`)
-  throw new Error(`Token Helena não encontrado para cliente: ${normalizedClientId}`)
+  if (!user.helena_token) {
+    console.error(`[helena-config] Token Helena não configurado para usuário: ${userId}`)
+    throw new Error(`Token Helena não configurado para usuário: ${userId}`)
+  }
+
+  return user.helena_token
 }
 
-export type { HelenaTokenConfig }
+// Verificar se a configuração Helena está OK
+export const isHelenaConfigured = (): boolean => {
+  return Boolean(helenaConfig.baseURL)
+}
 
+export type HelenaConfig = typeof helenaConfig

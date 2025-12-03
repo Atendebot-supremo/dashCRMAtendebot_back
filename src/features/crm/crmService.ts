@@ -1,19 +1,19 @@
 import HelenaClient from './helenaClient'
-import { getHelenaToken } from '../../config/helena'
-import { helenaConfig } from '../../config/helena'
+import { getHelenaToken, helenaConfig } from '../../config/helena'
 import type { Panel, Card, CardsResponse, PanelsResponse, CardFilters, User, Channel } from './types'
 
 export class CrmService {
-  private getClient(clientId: string): HelenaClient {
-    const token = getHelenaToken(clientId)
+  // Agora é assíncrono pois busca token do Supabase
+  private async getClient(userId: string): Promise<HelenaClient> {
+    const token = await getHelenaToken(userId)
     return new HelenaClient({
       baseURL: helenaConfig.baseURL,
       token
     })
   }
 
-  async getPanels(clientId: string): Promise<PanelsResponse> {
-    const client = this.getClient(clientId)
+  async getPanels(userId: string): Promise<PanelsResponse> {
+    const client = await this.getClient(userId)
     const response = await client.getPanels()
 
     if (!response.items) {
@@ -26,13 +26,13 @@ export class CrmService {
     }
   }
 
-  async getPanelById(clientId: string, panelId: string): Promise<Panel> {
-    const client = this.getClient(clientId)
+  async getPanelById(userId: string, panelId: string): Promise<Panel> {
+    const client = await this.getClient(userId)
     return await client.getPanelById(panelId)
   }
 
-  async getCards(clientId: string, filters: CardFilters): Promise<CardsResponse> {
-    const client = this.getClient(clientId)
+  async getCards(userId: string, filters: CardFilters): Promise<CardsResponse> {
+    const client = await this.getClient(userId)
     const response = await client.getCards(filters)
 
     if (!response.items) {
@@ -56,13 +56,13 @@ export class CrmService {
     }
   }
 
-  async getCardById(clientId: string, cardId: string): Promise<Card> {
-    const client = this.getClient(clientId)
+  async getCardById(userId: string, cardId: string): Promise<Card> {
+    const client = await this.getClient(userId)
     return await client.getCardById(cardId)
   }
 
-  async getUsers(clientId: string): Promise<{ items: User[]; totalItems: number }> {
-    const client = this.getClient(clientId)
+  async getUsers(userId: string): Promise<{ items: User[]; totalItems: number }> {
+    const client = await this.getClient(userId)
     const cardsResponse = await client.getCards({ panelId: '' })
 
     const usersMap = new Map<string, User>()
@@ -83,7 +83,8 @@ export class CrmService {
     }
   }
 
-  async getChannels(clientId: string): Promise<{ items: Channel[]; totalItems: number }> {
+  async getChannels(_userId: string): Promise<{ items: Channel[]; totalItems: number }> {
+    // Canais são estáticos por enquanto
     const channels: Channel[] = [
       { id: 'meta', name: 'Meta (Facebook/Instagram)', type: 'meta' },
       { id: 'google', name: 'Google Ads', type: 'google' },
@@ -100,4 +101,3 @@ export class CrmService {
     }
   }
 }
-

@@ -186,14 +186,14 @@ export const apiClient = {
     return fetchWithAuth(`/api/metrics/dashboard?${params.toString()}`)
   },
 
-  // Autenticação
-  async login(email: string, password: string) {
+  // Autenticação (via Telefone)
+  async login(phone: string) {
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ phone })
     })
 
     const data = await response.json()
@@ -202,9 +202,10 @@ export const apiClient = {
       throw new Error(data.error || 'Erro ao fazer login')
     }
 
-    // Salvar token
+    // Salvar token JWT
     localStorage.setItem('authToken', data.data.token)
     
+    // Retorna: token, helena (accessToken, userId, etc.), user (id, name, phone)
     return data.data
   },
 
@@ -339,7 +340,7 @@ export const useDashboard = (filters: {
 
 ---
 
-### 4. Componente de Login
+### 4. Componente de Login (via Telefone)
 
 Criar novo componente: `src/pages/LoginPage.tsx`
 
@@ -351,11 +352,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { apiClient } from '@/lib/api/client'
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [phone, setPhone] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+
+  // Formatar telefone enquanto digita
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '') // Remove não-números
+    setPhone(value)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -363,7 +369,7 @@ const LoginPage = () => {
     setLoading(true)
 
     try {
-      await apiClient.login(email, password)
+      await apiClient.login(phone)
       navigate('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao fazer login')
@@ -387,28 +393,23 @@ const LoginPage = () => {
             )}
             
             <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
+              <label className="block text-sm font-medium mb-1">Telefone</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="tel"
+                value={phone}
+                onChange={handlePhoneChange}
+                placeholder="31999999999"
                 className="w-full px-3 py-2 border rounded"
                 required
+                minLength={10}
+                maxLength={15}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Digite apenas números (com DDD)
+              </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Senha</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border rounded"
-                required
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || phone.length < 10}>
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
@@ -592,7 +593,7 @@ npm run dev
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"contato@maxchip.com","password":"senha-segura"}'
+  -d '{"phone":"31999999999"}'
 ```
 
 3. **Copiar token da resposta e testar painéis:**
