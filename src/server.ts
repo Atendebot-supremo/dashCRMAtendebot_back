@@ -26,7 +26,6 @@ const allowedOrigins = process.env.CORS_ORIGINS
       'http://localhost:5173',
       'http://localhost:3000',
       'https://dashcrmatendebotfront-desenvolvimento.up.railway.app',
-      'https://dashcrmatendebotfront-desenvolvimento.up.railway.app/login',
       'https://dashcrmatendebotfront-production.up.railway.app'
     ]
 
@@ -230,12 +229,15 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
 process.on('SIGINT', () => gracefulShutdown('SIGINT'))
 
 // Start server
-httpServer.listen(PORT, () => {
+// Railway requer que escutemos em 0.0.0.0, não apenas na porta
+const HOST = '0.0.0.0'
+httpServer.listen(Number(PORT), HOST, () => {
   console.log('='.repeat(50))
   console.log(`🚀 Servidor rodando na porta ${PORT}`)
-  console.log(`📚 Documentação: http://localhost:${PORT}/api/docs`)
-  console.log(`🏥 Health: http://localhost:${PORT}/health`)
+  console.log(`📚 Documentação: http://${HOST}:${PORT}/api/docs`)
+  console.log(`🏥 Health: http://${HOST}:${PORT}/health`)
   console.log(`🌍 Ambiente: ${NODE_ENV}`)
+  console.log(`🌐 Escutando em: ${HOST}:${PORT}`)
   console.log('='.repeat(50))
 })
 
