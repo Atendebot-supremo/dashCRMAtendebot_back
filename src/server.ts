@@ -26,17 +26,11 @@ const allowedOrigins = process.env.CORS_ORIGINS
       'http://localhost:5173',
       'http://localhost:3000',
       'https://dashcrmatendebotfront-desenvolvimento.up.railway.app',
+      'https://dashcrmatendebotfront-desenvolvimento.up.railway.app/login',
       'https://dashcrmatendebotfront-production.up.railway.app'
     ]
 
-// Middlewares globais
-app.use(
-  helmet({
-    contentSecurityPolicy: NODE_ENV === 'production',
-    crossOriginEmbedderPolicy: false
-  })
-)
-
+// CORS deve ser o PRIMEIRO middleware para garantir que preflight funcione
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -50,7 +44,7 @@ app.use(
         return callback(null, true)
       }
       
-      // Log para debug (remover em produção se necessário)
+      // Log para debug
       console.log('[CORS] Origin não permitida:', origin)
       console.log('[CORS] Origins permitidas:', allowedOrigins)
       
@@ -59,9 +53,32 @@ app.use(
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    exposedHeaders: ['Content-Length', 'Content-Type'],
+    preflightContinue: false
   })
 )
+
+// Middlewares globais
+app.use(
+  helmet({
+    contentSecurityPolicy: NODE_ENV === 'production',
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+  })
+)
+
+// Handler explícito para requisições OPTIONS (preflight CORS)
+app.options('*', (req, res) => {
+  const origin = req.headers.origin
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin)
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
+    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept')
+    res.header('Access-Control-Allow-Credentials', 'true')
+  }
+  res.sendStatus(200)
+})
 
 // Rate limiting global
 const globalRateLimiter = rateLimit({
