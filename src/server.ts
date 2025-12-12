@@ -40,14 +40,26 @@ app.use(
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true)
-      } else {
-        callback(new Error('Não permitido por CORS'))
+      // Permitir requisições sem origin (mobile apps, Postman, etc)
+      if (!origin) {
+        return callback(null, true)
       }
+      
+      // Verificar se a origin está na lista permitida
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true)
+      }
+      
+      // Log para debug (remover em produção se necessário)
+      console.log('[CORS] Origin não permitida:', origin)
+      console.log('[CORS] Origins permitidas:', allowedOrigins)
+      
+      callback(new Error('Não permitido por CORS'))
     },
     credentials: true,
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
   })
 )
 
@@ -59,8 +71,8 @@ const globalRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting para health checks
-    return req.path === '/health' || req.path === '/ready' || req.path === '/live'
+    // Skip rate limiting para health checks e requisições OPTIONS (preflight)
+    return req.path === '/health' || req.path === '/ready' || req.path === '/live' || req.method === 'OPTIONS'
   }
 })
 
