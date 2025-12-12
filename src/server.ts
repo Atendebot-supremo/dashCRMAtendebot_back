@@ -22,7 +22,12 @@ const httpServer = createServer(app)
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
-  : ['http://localhost:5173', 'http://localhost:3000']
+  : [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://dashcrmatendebotfront-desenvolvimento.up.railway.app',
+      'https://dashcrmatendebotfront-production.up.railway.app'
+    ]
 
 // Middlewares globais
 app.use(
