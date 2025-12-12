@@ -7,6 +7,17 @@ import swaggerJsdoc from 'swagger-jsdoc'
 import swaggerUi from 'swagger-ui-express'
 import { createServer } from 'http'
 
+// Log inicial para debug
+console.log('[INIT] Iniciando servidor...')
+console.log('[INIT] Variáveis de ambiente:', {
+  PORT: process.env.PORT,
+  NODE_ENV: process.env.NODE_ENV,
+  SUPABASE_URL: process.env.SUPABASE_URL ? 'configurado' : 'não configurado',
+  SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY ? 'configurado' : 'não configurado',
+  JWT_SECRET: process.env.JWT_SECRET ? 'configurado' : 'não configurado',
+  HELENA_API_URL: process.env.HELENA_API_URL
+})
+
 // Rotas
 import authRoutes from './features/auth/authRoutes'
 import crmRoutes from './features/crm/crmRoutes'
@@ -17,6 +28,7 @@ const app = express()
 const PORT = process.env.PORT || 3000
 const NODE_ENV = process.env.NODE_ENV || 'development'
 
+console.log('[INIT] Criando servidor HTTP...')
 const httpServer = createServer(app)
 
 // CORS configuration
@@ -231,13 +243,52 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'))
 // Start server
 // Railway requer que escutemos em 0.0.0.0, não apenas na porta
 const HOST = '0.0.0.0'
-httpServer.listen(Number(PORT), HOST, () => {
-  console.log('='.repeat(50))
-  console.log(`🚀 Servidor rodando na porta ${PORT}`)
-  console.log(`📚 Documentação: http://${HOST}:${PORT}/api/docs`)
-  console.log(`🏥 Health: http://${HOST}:${PORT}/health`)
-  console.log(`🌍 Ambiente: ${NODE_ENV}`)
-  console.log(`🌐 Escutando em: ${HOST}:${PORT}`)
-  console.log('='.repeat(50))
-})
+
+console.log('[INIT] Preparando para iniciar servidor na porta', PORT)
+
+try {
+  // Configurar handler de erro ANTES de chamar listen
+  httpServer.on('error', (error: NodeJS.ErrnoException) => {
+    console.error('[SERVER] Erro no servidor HTTP:', error)
+    if (error.syscall !== 'listen') {
+      throw error
+    }
+
+    const bind = typeof PORT === 'string' ? 'Pipe ' + PORT : 'Port ' + PORT
+
+    switch (error.code) {
+      case 'EACCES':
+        console.error(`[SERVER] ${bind} requires elevated privileges`)
+        process.exit(1)
+        break
+      case 'EADDRINUSE':
+        console.error(`[SERVER] ${bind} is already in use`)
+        process.exit(1)
+        break
+      default:
+        console.error(`[SERVER] Erro desconhecido: ${error.code}`)
+        throw error
+    }
+  })
+
+  httpServer.on('listening', () => {
+    console.log('[SERVER] Servidor HTTP está escutando')
+  })
+
+  httpServer.listen(Number(PORT), HOST, () => {
+    console.log('='.repeat(50))
+    console.log(`🚀 Servidor rodando na porta ${PORT}`)
+    console.log(`📚 Documentação: http://${HOST}:${PORT}/api/docs`)
+    console.log(`🏥 Health: http://${HOST}:${PORT}/health`)
+    console.log(`🌍 Ambiente: ${NODE_ENV}`)
+    console.log(`🌐 Escutando em: ${HOST}:${PORT}`)
+    console.log('='.repeat(50))
+  })
+} catch (error) {
+  console.error('[FATAL] Erro ao iniciar servidor:', error)
+  if (error instanceof Error) {
+    console.error('[FATAL] Stack:', error.stack)
+  }
+  process.exit(1)
+}
 
