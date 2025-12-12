@@ -65,8 +65,14 @@ export class AuthController {
    *                           type: string
    *                         name:
    *                           type: string
+   *                         userName:
+   *                           type: string
+   *                           description: Nome de usuário (opcional)
    *                         phone:
    *                           type: string
+   *                         email:
+   *                           type: string
+   *                           description: Email do usuário (opcional)
    *       400:
    *         description: Dados inválidos
    *       401:

@@ -21,7 +21,9 @@ export interface LoginResponse {
   user: {
     id: string
     name: string
+    userName?: string
     phone: string
+    email?: string
   }
 }
 
@@ -44,7 +46,9 @@ export interface LoginResult {
   user: {
     id: string
     name: string
+    userName?: string
     phone: string
+    email?: string
   }
 }
 

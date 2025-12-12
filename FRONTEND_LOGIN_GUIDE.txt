@@ -1,0 +1,309 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    📚 GUIA DE INTEGRAÇÃO - LOGIN FRONTEND
+═══════════════════════════════════════════════════════════════════════════════
+
+🔗 ENDPOINT
+───────────────────────────────────────────────────────────────────────────────
+POST /api/auth/login
+
+URL Completa:
+  • Desenvolvimento: http://localhost:3000/api/auth/login
+  • Produção: https://seu-backend.railway.app/api/auth/login
+
+
+📤 REQUEST (O que enviar)
+───────────────────────────────────────────────────────────────────────────────
+Headers:
+  Content-Type: application/json
+
+Body (JSON) - Pelo menos UM campo obrigatório:
+  {
+    phone?: string,    // Opcional: 10-15 caracteres (ex: "31999999999")
+    email?: string     // Opcional: email válido (ex: "[email protected]")
+  }
+
+Exemplos de Body:
+  // Apenas telefone
+  { "phone": "31999999999" }
+  
+  // Apenas email
+  { "email": "[email protected]" }
+  
+  // Telefone E email (ambos opcionais)
+  { "phone": "31999999999", "email": "[email protected]" }
+
+Validações:
+  • Telefone: 10-15 caracteres, apenas números e símbolos válidos (+, -, (), espaços)
+  • Email: formato válido
+  • Pelo menos um campo (phone OU email) é obrigatório
+
+
+✅ RESPONSE DE SUCESSO (200)
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",  // ← SALVAR NO LOCALSTORAGE
+    "helena": {
+      "accessToken": "pn_SjAWbv2gy8fBGvhBK780UEkE0fyp7oTfWLIAnwzI1k",
+      "userId": "0fcbe461-b9dc-4731-be3a-0619cac93a10",
+      "tenantId": "986ca29e-a041-46c2-b533-e08cd504439c"
+    },
+    "user": {
+      "id": "uuid-do-usuario",
+      "name": "Nome do Usuário",
+      "phone": "5531999999999"
+    }
+  },
+  "message": "Login realizado com sucesso"
+}
+
+⚠️ IMPORTANTE:
+  • Salvar data.token no localStorage/sessionStorage/cookies
+  • Usar esse token no header Authorization: Bearer ${token} em todas as 
+    requisições protegidas
+  • O token expira em 8 horas
+
+
+❌ RESPONSES DE ERRO
+───────────────────────────────────────────────────────────────────────────────
+
+400 - Dados Inválidos:
+{
+  "success": false,
+  "error": "Dados inválidos",
+  "code": "INVALID_INPUT",
+  "details": [
+    {
+      "field": "phone",
+      "message": "Telefone deve ter entre 10 e 15 caracteres"
+    }
+  ]
+}
+
+401 - Não Autorizado:
+{
+  "success": false,
+  "error": "Telefone/email não encontrado ou inativo",
+  "code": "UNAUTHORIZED"
+}
+
+429 - Rate Limit Excedido:
+{
+  "success": false,
+  "error": "Muitas tentativas de login. Tente novamente mais tarde.",
+  "code": "TOO_MANY_REQUESTS"
+}
+
+502 - Erro na API Helena:
+{
+  "success": false,
+  "error": "Erro na autenticação: ...",
+  "code": "BAD_GATEWAY" | "SERVICE_UNAVAILABLE"
+}
+
+
+💻 CÓDIGO TYPESCRIPT DE EXEMPLO
+───────────────────────────────────────────────────────────────────────────────
+
+// ========================================
+// 1. TIPOS (criar arquivo types/auth.ts)
+// ========================================
+export interface LoginRequest {
+  phone?: string
+  email?: string
+}
+
+export interface LoginResponse {
+  success: boolean
+  data: {
+    token: string
+    helena: {
+      accessToken: string
+      userId: string
+      tenantId: string
+    }
+    user: {
+      id: string
+      name: string
+      phone: string
+    }
+  }
+  message: string
+}
+
+export interface ApiError {
+  success: false
+  error: string
+  code: string
+  details?: Array<{ field: string; message: string }>
+}
+
+// ========================================
+// 2. FUNÇÃO DE LOGIN (services/authService.ts)
+// ========================================
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+export const login = async (phone?: string, email?: string): Promise<LoginResponse> => {
+  // Validar que pelo menos um campo foi enviado
+  if (!phone?.trim() && !email?.trim()) {
+    throw new Error('Telefone ou email é obrigatório')
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ phone, email })
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    const error = data as ApiError
+    throw new Error(error.error || 'Erro ao fazer login')
+  }
+
+  // Salvar token no localStorage
+  if (data.success && data.data?.token) {
+    localStorage.setItem('auth_token', data.data.token)
+    localStorage.setItem('user_data', JSON.stringify(data.data.user))
+  }
+
+  return data as LoginResponse
+}
+
+// ========================================
+// 3. FUNÇÃO PARA HEADERS AUTOMÁTICOS
+// ========================================
+export const getAuthHeaders = () => {
+  const token = localStorage.getItem('auth_token')
+  
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  }
+}
+
+// ========================================
+// 4. EXEMPLO DE USO EM COMPONENTE
+// ========================================
+const handleLogin = async (phone: string) => {
+  try {
+    const response = await login(phone)
+    console.log('Login realizado!', response.data.user)
+    // Redirecionar ou atualizar estado
+    router.push('/dashboard')
+  } catch (error) {
+    console.error('Erro no login:', error)
+    // Mostrar mensagem de erro para o usuário
+    alert(error.message)
+  }
+}
+
+// ========================================
+// 5. EXEMPLO DE REQUISIÇÃO PROTEGIDA
+// ========================================
+const fetchProtectedData = async () => {
+  const token = localStorage.getItem('auth_token')
+  
+  if (!token) {
+    // Redirecionar para login
+    router.push('/login')
+    return
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/crm/panels`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+
+  if (response.status === 401) {
+    // Token expirado, fazer logout
+    localStorage.removeItem('auth_token')
+    router.push('/login')
+    return
+  }
+
+  const data = await response.json()
+  return data
+}
+
+
+⚠️ INFORMAÇÕES IMPORTANTES
+───────────────────────────────────────────────────────────────────────────────
+
+1. TOKEN JWT
+   • Expira em 8 horas
+   • Salvar no localStorage/sessionStorage/cookies
+   • Usar em TODAS as requisições protegidas
+   • Header: Authorization: Bearer ${token}
+
+2. RATE LIMITING
+   • 10 tentativas por 15 minutos por IP
+   • Mostrar mensagem amigável se exceder
+
+3. HEADERS OBRIGATÓRIOS
+   • Login: apenas Content-Type: application/json
+   • Rotas protegidas: Authorization: Bearer ${token}
+
+4. TRATAMENTO DE ERROS
+   • 401: Token inválido/expirado → fazer logout e redirecionar para login
+   • 429: Rate limit → aguardar antes de tentar novamente
+   • 502: Erro temporário → tentar novamente
+
+5. VARIÁVEIS DE AMBIENTE
+   .env.local (Next.js) ou .env
+   NEXT_PUBLIC_API_URL=http://localhost:3000           # Dev
+   NEXT_PUBLIC_API_URL=https://seu-backend.railway.app # Prod
+
+
+✅ CHECKLIST DE IMPLEMENTAÇÃO
+───────────────────────────────────────────────────────────────────────────────
+[ ] Criar função de login que aceita phone e/ou email
+[ ] Validar entrada (pelo menos um campo)
+[ ] Salvar token no localStorage após login bem-sucedido
+[ ] Criar função para adicionar header Authorization automaticamente
+[ ] Tratar erros (400, 401, 429, 502)
+[ ] Implementar logout (limpar token do localStorage)
+[ ] Verificar token antes de fazer requisições protegidas
+[ ] Redirecionar para login se token expirar (401)
+[ ] Adicionar interceptors/interceptors para adicionar token automaticamente
+[ ] Criar contexto/state management para gerenciar autenticação
+
+
+🔐 AUTENTICAÇÃO EM ROTAS PROTEGIDAS
+───────────────────────────────────────────────────────────────────────────────
+Todas as rotas CRM requerem o token no header:
+
+GET  /api/crm/panels
+GET  /api/crm/panels/:id
+GET  /api/crm/cards
+GET  /api/crm/cards/:id
+GET  /api/crm/agents
+GET  /api/crm/agents/:id
+
+Header obrigatório:
+  Authorization: Bearer ${token}
+
+
+📝 EXEMPLO COMPLETO DE FLUXO
+───────────────────────────────────────────────────────────────────────────────
+1. Usuário preenche formulário (telefone ou email)
+2. Frontend chama: POST /api/auth/login com { phone: "..." }
+3. Backend retorna token JWT
+4. Frontend salva token: localStorage.setItem('auth_token', token)
+5. Frontend usa token em requisições: 
+   fetch('/api/crm/panels', {
+     headers: { 'Authorization': `Bearer ${token}` }
+   })
+6. Se token expirar (401), fazer logout e redirecionar para login
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                                    FIM
+═══════════════════════════════════════════════════════════════════════════════
+

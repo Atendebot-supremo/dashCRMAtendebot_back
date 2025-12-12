@@ -30,3 +30,9 @@ COMMENT ON COLUMN users_dashcrmatendebot.email IS 'Email do usuário (opcional, 
 -- WHERE phone = '5531999999999';
 
 
+
+
+
+
+
+

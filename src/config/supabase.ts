@@ -29,6 +29,7 @@ export interface UserDashCRM {
   name: string
   phone: string
   email?: string
+  userName?: string
   helena_token: string
   created_at: string
   active: boolean
@@ -41,25 +42,61 @@ export const getUserByPhone = async (phone: string): Promise<UserDashCRM | null>
   }
 
   // Normalizar telefone (remover espaços, traços, etc.)
-  const normalizedPhone = phone.replace(/\D/g, '')
+  let normalizedPhone = phone.replace(/\D/g, '')
 
-  const { data, error } = await supabase
+  // Tentar buscar primeiro com o telefone normalizado como está
+  let { data, error } = await supabase
     .from('users_dashcrmatendebot')
     .select('*')
     .eq('phone', normalizedPhone)
     .eq('active', true)
     .single()
 
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // Nenhum registro encontrado
-      return null
+  // Se encontrou, retorna
+  if (!error && data) {
+    return data as UserDashCRM
+  }
+
+  // Se não encontrou e o telefone começa com 55, tenta sem o 55
+  if (normalizedPhone.startsWith('55') && normalizedPhone.length > 2) {
+    const phoneWithoutCountryCode = normalizedPhone.substring(2)
+    const { data: dataWithout55, error: errorWithout55 } = await supabase
+      .from('users_dashcrmatendebot')
+      .select('*')
+      .eq('phone', phoneWithoutCountryCode)
+      .eq('active', true)
+      .single()
+
+    if (!errorWithout55 && dataWithout55) {
+      return dataWithout55 as UserDashCRM
     }
-    console.error('[supabase] Erro ao buscar usuário:', error)
+  }
+  // Se não encontrou e o telefone NÃO começa com 55, tenta com o 55
+  else if (!normalizedPhone.startsWith('55')) {
+    const phoneWithCountryCode = '55' + normalizedPhone
+    const { data: dataWith55, error: errorWith55 } = await supabase
+      .from('users_dashcrmatendebot')
+      .select('*')
+      .eq('phone', phoneWithCountryCode)
+      .eq('active', true)
+      .single()
+
+    if (!errorWith55 && dataWith55) {
+      return dataWith55 as UserDashCRM
+    }
+  }
+
+  // Se não encontrou em nenhuma tentativa, retorna null
+  if (error && error.code === 'PGRST116') {
+    // Nenhum registro encontrado
     return null
   }
 
-  return data as UserDashCRM
+  if (error) {
+    console.error('[supabase] Erro ao buscar usuário:', error)
+  }
+
+  return null
 }
 
 // Função para buscar usuário pelo ID

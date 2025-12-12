@@ -1,0 +1,764 @@
+═══════════════════════════════════════════════════════════════════════════════
+           📚 GUIA COMPLETO DE ROTAS CRM - FRONTEND
+           (Após fazer login e receber o token)
+═══════════════════════════════════════════════════════════════════════════════
+
+🔑 AUTENTICAÇÃO OBRIGATÓRIA
+───────────────────────────────────────────────────────────────────────────────
+TODAS as rotas CRM requerem o token JWT no header:
+
+Header obrigatório em TODAS as requisições:
+  Authorization: Bearer ${token}
+
+Onde ${token} é o token recebido na resposta do login:
+  data.token
+
+⚠️ IMPORTANTE:
+  • Sem o token, você receberá erro 401 (Unauthorized)
+  • Token expira em 8 horas
+  • Se receber 401, faça logout e login novamente
+  • Rate Limit: 60 requisições por minuto
+
+
+📋 ROTAS DISPONÍVEIS
+───────────────────────────────────────────────────────────────────────────────
+
+1. GET  /api/crm/panels           - Lista todos os painéis
+2. GET  /api/crm/panels/:id       - Detalhes de um painel
+3. GET  /api/crm/cards            - Lista cards (requer panelId)
+4. GET  /api/crm/cards/:id        - Detalhes de um card
+5. GET  /api/crm/agents           - Lista agentes (requer panelId)
+6. GET  /api/crm/agents/:id       - Detalhes de um agente
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                             ROTA 1: LISTAR PAINÉIS
+═══════════════════════════════════════════════════════════════════════════════
+
+📡 GET /api/crm/panels
+
+Descrição: Lista todos os painéis CRM do usuário autenticado.
+
+✅ Autenticação: OBRIGATÓRIA
+📝 Query Parameters: Nenhum
+📦 Headers: Authorization: Bearer ${token}
+
+Exemplo de Requisição:
+───────────────────────────────────────────────────────────────────────────────
+const token = localStorage.getItem('auth_token')
+
+const response = await fetch('http://localhost:3000/api/crm/panels', {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+})
+
+const data = await response.json()
+
+Response 200 (Sucesso):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "fa8c96c0-db47-42f4-9f83-d1e257ab4a11",
+        "name": "Nome do Painel",
+        "description": "Descrição do painel",
+        "createdAt": "2025-12-03T16:27:34.767015Z",
+        "updatedAt": "2025-12-03T17:03:50.343603Z",
+        "steps": [
+          {
+            "id": "4645a498-48b7-4d27-84dd-74d90fed09f6",
+            "title": "Nome do Step",
+            "phase": "phase-name",
+            "position": 1
+          }
+        ]
+      }
+    ],
+    "totalItems": 1
+  },
+  "message": "Painéis listados com sucesso"
+}
+
+Response 401 (Não autorizado):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": false,
+  "error": "Token não informado",
+  "code": "UNAUTHORIZED"
+}
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                          ROTA 2: DETALHES DE UM PAINEL
+═══════════════════════════════════════════════════════════════════════════════
+
+📡 GET /api/crm/panels/:id
+
+Descrição: Obtém detalhes completos de um painel específico.
+
+✅ Autenticação: OBRIGATÓRIA
+📝 Path Parameters:
+   • id (string, obrigatório) - ID do painel
+
+Exemplo de Requisição:
+───────────────────────────────────────────────────────────────────────────────
+const panelId = 'fa8c96c0-db47-42f4-9f83-d1e257ab4a11'
+const token = localStorage.getItem('auth_token')
+
+const response = await fetch(`http://localhost:3000/api/crm/panels/${panelId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+})
+
+const data = await response.json()
+
+Response 200 (Sucesso):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": true,
+  "data": {
+    "id": "fa8c96c0-db47-42f4-9f83-d1e257ab4a11",
+    "name": "Nome do Painel",
+    "description": "Descrição do painel",
+    "createdAt": "2025-12-03T16:27:34.767015Z",
+    "updatedAt": "2025-12-03T17:03:50.343603Z",
+    "steps": [...]
+  },
+  "message": "Painel encontrado com sucesso"
+}
+
+Response 404 (Não encontrado):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": false,
+  "error": "Painel não encontrado",
+  "code": "NOT_FOUND"
+}
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                              ROTA 3: LISTAR CARDS
+═══════════════════════════════════════════════════════════════════════════════
+
+📡 GET /api/crm/cards
+
+Descrição: Lista cards com filtros opcionais (paginação, datas, usuários, etc).
+
+✅ Autenticação: OBRIGATÓRIA
+📝 Query Parameters:
+   • panelId (string, OBRIGATÓRIO) - ID do painel
+   • startDate (string, opcional) - Data inicial ISO 8601: "2025-12-01T00:00:00Z"
+   • endDate (string, opcional) - Data final ISO 8601: "2025-12-31T23:59:59Z"
+   • userId (string, opcional) - Filtrar por ID do usuário responsável
+   • channelId (string, opcional) - Filtrar por canal
+   • stepId (string, opcional) - Filtrar por step do painel
+   • page (number, opcional) - Número da página (padrão: 1)
+   • pageSize (number, opcional) - Itens por página (padrão: 100, máximo: 1000)
+
+Exemplo de Requisição (Simples):
+───────────────────────────────────────────────────────────────────────────────
+const panelId = 'fa8c96c0-db47-42f4-9f83-d1e257ab4a11'
+const token = localStorage.getItem('auth_token')
+
+const params = new URLSearchParams({
+  panelId: panelId
+})
+
+const response = await fetch(`http://localhost:3000/api/crm/cards?${params}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+})
+
+const data = await response.json()
+
+Exemplo de Requisição (Com Filtros e Paginação):
+───────────────────────────────────────────────────────────────────────────────
+const panelId = 'fa8c96c0-db47-42f4-9f83-d1e257ab4a11'
+const token = localStorage.getItem('auth_token')
+
+const params = new URLSearchParams({
+  panelId: panelId,
+  startDate: '2025-12-01T00:00:00Z',
+  endDate: '2025-12-31T23:59:59Z',
+  page: '1',
+  pageSize: '15'
+})
+
+const response = await fetch(`http://localhost:3000/api/crm/cards?${params}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+})
+
+const data = await response.json()
+
+Response 200 (Sucesso):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "637cb0d0-75ee-4e7c-8574-15e299637de6",
+        "title": "Título do Card",
+        "key": "ATEN-62",
+        "number": 62,
+        "panelId": "fa8c96c0-db47-42f4-9f83-d1e257ab4a11",
+        "panelTitle": null,
+        "stepId": "4645a498-48b7-4d27-84dd-74d90fed09f6",
+        "stepTitle": null,
+        "stepPhase": null,
+        "position": 1,
+        "description": "Descrição do card",
+        "monetaryAmount": null,
+        "isOverdue": false,
+        "dueDate": null,
+        "archived": false,
+        "createdAt": "2025-12-03T16:27:34.767015Z",
+        "updatedAt": "2025-12-03T17:03:50.343603Z",
+        "responsibleUserId": "0fcbe461-b9dc-4731-be3a-0619cac93a10",
+        "responsibleUser": null,
+        "contactIds": ["f811001b-3944-43ae-99ac-097bd1b5286b"],
+        "contacts": [],
+        "companyId": "986ca29e-a041-46c2-b533-e08cd504439c",
+        "tagIds": ["f7ffdfd9-a7ee-46c3-89df-be72da0523dc"],
+        "sessionId": null,
+        "customFields": null,
+        "metadata": null
+      }
+    ],
+    "pagination": {
+      "totalItems": 7,
+      "totalPages": 1,
+      "pageNumber": 1,
+      "pageSize": 15
+    }
+  },
+  "message": "Cards listados com sucesso"
+}
+
+Response 400 (Erro de validação):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": false,
+  "error": "panelId é obrigatório",
+  "code": "INVALID_INPUT"
+}
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                           ROTA 4: DETALHES DE UM CARD
+═══════════════════════════════════════════════════════════════════════════════
+
+📡 GET /api/crm/cards/:id
+
+Descrição: Obtém detalhes completos de um card específico.
+
+✅ Autenticação: OBRIGATÓRIA
+📝 Path Parameters:
+   • id (string, obrigatório) - ID do card
+
+Exemplo de Requisição:
+───────────────────────────────────────────────────────────────────────────────
+const cardId = '637cb0d0-75ee-4e7c-8574-15e299637de6'
+const token = localStorage.getItem('auth_token')
+
+const response = await fetch(`http://localhost:3000/api/crm/cards/${cardId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+})
+
+const data = await response.json()
+
+Response 200 (Sucesso):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": true,
+  "data": {
+    "id": "637cb0d0-75ee-4e7c-8574-15e299637de6",
+    "title": "Título do Card",
+    // ... todos os campos do card
+  },
+  "message": "Card encontrado com sucesso"
+}
+
+Response 404 (Não encontrado):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": false,
+  "error": "Card não encontrado",
+  "code": "NOT_FOUND"
+}
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                             ROTA 5: LISTAR AGENTES
+═══════════════════════════════════════════════════════════════════════════════
+
+📡 GET /api/crm/agents
+
+Descrição: Lista agentes/responsáveis de um painel específico.
+
+✅ Autenticação: OBRIGATÓRIA
+📝 Query Parameters:
+   • panelId (string, OBRIGATÓRIO) - ID do painel
+
+Exemplo de Requisição:
+───────────────────────────────────────────────────────────────────────────────
+const panelId = 'fa8c96c0-db47-42f4-9f83-d1e257ab4a11'
+const token = localStorage.getItem('auth_token')
+
+const params = new URLSearchParams({
+  panelId: panelId
+})
+
+const response = await fetch(`http://localhost:3000/api/crm/agents?${params}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+})
+
+const data = await response.json()
+
+Response 200 (Sucesso):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "f29f2d5e-6857-49f0-9543-83402ff2ec70",
+        "createdAt": "2025-02-20T20:00:30.253097Z",
+        "updatedAt": "2025-10-30T16:22:41.321897Z",
+        "companyId": "986ca29e-a041-46c2-b533-e08cd504439c",
+        "userId": "0fcbe461-b9dc-4731-be3a-0619cac93a10",
+        "name": "Jhonatan",
+        "shortName": "Jhon",
+        "email": "jhonatandasilva2405@gmail.com",
+        "phoneNumber": "+55|34991882622",
+        "phoneNumberFormatted": "(34) 99188-2622",
+        "profile": "ADMIN",
+        "isOwner": true,
+        "departments": [
+          {
+            "agentId": "00000000-0000-0000-0000-000000000000",
+            "departmentId": "120505c5-eea6-4f0a-bb51-5073b9a5f2d1",
+            "isAgent": true,
+            "isSupervisor": true
+          }
+        ]
+      }
+    ],
+    "totalItems": 1
+  },
+  "message": "Agentes listados com sucesso"
+}
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                          ROTA 6: DETALHES DE UM AGENTE
+═══════════════════════════════════════════════════════════════════════════════
+
+📡 GET /api/crm/agents/:id
+
+Descrição: Obtém detalhes completos de um agente/atendente específico.
+
+✅ Autenticação: OBRIGATÓRIA
+📝 Path Parameters:
+   • id (string, obrigatório) - ID do agente (userId)
+
+Exemplo de Requisição:
+───────────────────────────────────────────────────────────────────────────────
+const agentId = '0fcbe461-b9dc-4731-be3a-0619cac93a10'
+const token = localStorage.getItem('auth_token')
+
+const response = await fetch(`http://localhost:3000/api/crm/agents/${agentId}`, {
+  method: 'GET',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+})
+
+const data = await response.json()
+
+Response 200 (Sucesso):
+───────────────────────────────────────────────────────────────────────────────
+{
+  "success": true,
+  "data": {
+    "id": "f29f2d5e-6857-49f0-9543-83402ff2ec70",
+    "userId": "0fcbe461-b9dc-4731-be3a-0619cac93a10",
+    "name": "Jhonatan",
+    "shortName": "Jhon",
+    "email": "jhonatandasilva2405@gmail.com",
+    "phoneNumber": "+55|34991882622",
+    "phoneNumberFormatted": "(34) 99188-2622",
+    "profile": "ADMIN",
+    "isOwner": true,
+    "departments": [...]
+  },
+  "message": "Agente encontrado com sucesso"
+}
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                        💻 CÓDIGO TYPESCRIPT COMPLETO
+═══════════════════════════════════════════════════════════════════════════════
+
+// ========================================
+// 1. TIPOS (types/crm.ts)
+// ========================================
+export interface Panel {
+  id: string
+  name: string
+  description: string
+  createdAt: string
+  updatedAt: string
+  steps: Array<{
+    id: string
+    title: string
+    phase: string
+    position: number
+  }>
+}
+
+export interface Card {
+  id: string
+  title: string
+  key: string
+  number: number
+  panelId: string
+  panelTitle: string | null
+  stepId: string
+  stepTitle: string | null
+  stepPhase: string | null
+  position: number
+  description: string
+  monetaryAmount: number | null
+  isOverdue: boolean
+  dueDate: string | null
+  archived: boolean
+  createdAt: string
+  updatedAt: string
+  responsibleUserId: string
+  responsibleUser: any | null
+  contactIds: string[]
+  contacts: any[]
+  companyId: string
+  tagIds: string[]
+  sessionId: string | null
+  customFields: any | null
+  metadata: any | null
+}
+
+export interface Agent {
+  id: string
+  createdAt: string
+  updatedAt: string
+  companyId: string
+  userId: string
+  name: string
+  shortName: string
+  email: string
+  phoneNumber: string
+  phoneNumberFormatted: string
+  profile: string
+  isOwner: boolean
+  departments: Array<{
+    agentId: string
+    departmentId: string
+    isAgent: boolean
+    isSupervisor: boolean
+  }>
+}
+
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+  message: string
+}
+
+export interface PaginatedResponse<T> {
+  items: T[]
+  pagination: {
+    totalItems: number
+    totalPages: number
+    pageNumber: number
+    pageSize: number
+  }
+}
+
+// ========================================
+// 2. SERVIÇO CRM (services/crmService.ts)
+// ========================================
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
+// Função auxiliar para headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('auth_token')
+  if (!token) {
+    throw new Error('Token não encontrado. Faça login novamente.')
+  }
+  
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+}
+
+// Função auxiliar para tratamento de erros
+const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
+  const data = await response.json()
+  
+  if (!response.ok) {
+    if (response.status === 401) {
+      // Token expirado, fazer logout
+      localStorage.removeItem('auth_token')
+      window.location.href = '/login'
+      throw new Error('Sessão expirada. Faça login novamente.')
+    }
+    throw new Error(data.error || 'Erro na requisição')
+  }
+  
+  return data
+}
+
+// 1. Listar Painéis
+export const getPanels = async (): Promise<ApiResponse<{ items: Panel[], totalItems: number }>> => {
+  const response = await fetch(`${API_BASE_URL}/api/crm/panels`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  })
+  
+  return handleResponse<{ items: Panel[], totalItems: number }>(response)
+}
+
+// 2. Detalhes de um Painel
+export const getPanelById = async (id: string): Promise<ApiResponse<Panel>> => {
+  const response = await fetch(`${API_BASE_URL}/api/crm/panels/${id}`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  })
+  
+  return handleResponse<Panel>(response)
+}
+
+// 3. Listar Cards
+export interface GetCardsParams {
+  panelId: string
+  startDate?: string
+  endDate?: string
+  userId?: string
+  channelId?: string
+  stepId?: string
+  page?: number
+  pageSize?: number
+}
+
+export const getCards = async (params: GetCardsParams): Promise<ApiResponse<PaginatedResponse<Card>>> => {
+  const queryParams = new URLSearchParams()
+  
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      queryParams.append(key, String(value))
+    }
+  })
+  
+  const response = await fetch(`${API_BASE_URL}/api/crm/cards?${queryParams}`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  })
+  
+  return handleResponse<PaginatedResponse<Card>>(response)
+}
+
+// 4. Detalhes de um Card
+export const getCardById = async (id: string): Promise<ApiResponse<Card>> => {
+  const response = await fetch(`${API_BASE_URL}/api/crm/cards/${id}`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  })
+  
+  return handleResponse<Card>(response)
+}
+
+// 5. Listar Agentes
+export const getAgents = async (panelId: string): Promise<ApiResponse<{ items: Agent[], totalItems: number }>> => {
+  const params = new URLSearchParams({ panelId })
+  
+  const response = await fetch(`${API_BASE_URL}/api/crm/agents?${params}`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  })
+  
+  return handleResponse<{ items: Agent[], totalItems: number }>(response)
+}
+
+// 6. Detalhes de um Agente
+export const getAgentById = async (id: string): Promise<ApiResponse<Agent>> => {
+  const response = await fetch(`${API_BASE_URL}/api/crm/agents/${id}`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  })
+  
+  return handleResponse<Agent>(response)
+}
+
+// ========================================
+// 3. EXEMPLO DE USO EM COMPONENTE REACT
+// ========================================
+import { useState, useEffect } from 'react'
+import { getPanels, getCards, getAgents } from '@/services/crmService'
+
+const CrmDashboard = () => {
+  const [panels, setPanels] = useState([])
+  const [selectedPanel, setSelectedPanel] = useState(null)
+  const [cards, setCards] = useState([])
+  const [agents, setAgents] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  // Carregar painéis ao montar componente
+  useEffect(() => {
+    loadPanels()
+  }, [])
+
+  const loadPanels = async () => {
+    try {
+      setLoading(true)
+      const response = await getPanels()
+      setPanels(response.data.items)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Carregar cards quando selecionar um painel
+  const handleSelectPanel = async (panelId: string) => {
+    try {
+      setLoading(true)
+      const [cardsResponse, agentsResponse] = await Promise.all([
+        getCards({ panelId, page: 1, pageSize: 50 }),
+        getAgents(panelId)
+      ])
+      
+      setCards(cardsResponse.data.items)
+      setAgents(agentsResponse.data.items)
+      setSelectedPanel(panelId)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) return <div>Carregando...</div>
+  if (error) return <div>Erro: {error}</div>
+
+  return (
+    <div>
+      <h1>Painéis CRM</h1>
+      {panels.map(panel => (
+        <div key={panel.id} onClick={() => handleSelectPanel(panel.id)}>
+          <h2>{panel.name}</h2>
+          <p>{panel.description}</p>
+        </div>
+      ))}
+      
+      {selectedPanel && (
+        <div>
+          <h2>Cards</h2>
+          {cards.map(card => (
+            <div key={card.id}>
+              <h3>{card.title}</h3>
+              <p>{card.description}</p>
+            </div>
+          ))}
+          
+          <h2>Agentes</h2>
+          {agents.map(agent => (
+            <div key={agent.id}>
+              <h3>{agent.name}</h3>
+              <p>{agent.email}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                              ⚠️ TRATAMENTO DE ERROS
+═══════════════════════════════════════════════════════════════════════════════
+
+Códigos de Erro Comuns:
+
+401 - Unauthorized:
+  • Token não informado
+  • Token inválido ou expirado
+  → Ação: Fazer logout e redirecionar para login
+
+403 - Forbidden:
+  • Usuário sem permissão
+  → Ação: Mostrar mensagem de acesso negado
+
+404 - Not Found:
+  • Recurso não encontrado (painel, card, agente)
+  → Ação: Mostrar mensagem amigável
+
+400 - Bad Request:
+  • Dados inválidos (ex: panelId obrigatório não informado)
+  → Ação: Mostrar mensagem de validação
+
+429 - Too Many Requests:
+  • Rate limit excedido (60 req/min)
+  → Ação: Aguardar antes de tentar novamente
+
+500 - Internal Server Error:
+  • Erro no servidor
+  → Ação: Tentar novamente ou reportar erro
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                           📝 RESUMO RÁPIDO - CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+[ ] Fazer login e salvar o token no localStorage
+[ ] Criar função getAuthHeaders() para adicionar token automaticamente
+[ ] Criar função handleResponse() para tratar erros (especialmente 401)
+[ ] Implementar chamadas para cada rota CRM
+[ ] Tratar paginação nos cards (page, pageSize)
+[ ] Tratar filtros opcionais nos cards (datas, usuários, etc)
+[ ] Implementar loading states
+[ ] Implementar error handling
+[ ] Fazer logout e redirecionar quando token expirar (401)
+[ ] Adicionar interceptors/interceptors para adicionar token automaticamente
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                                    FIM
+═══════════════════════════════════════════════════════════════════════════════
+
