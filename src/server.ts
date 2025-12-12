@@ -79,17 +79,8 @@ app.use(
   })
 )
 
-// Handler explícito para requisições OPTIONS (preflight CORS)
-app.options('*', (req, res) => {
-  const origin = req.headers.origin
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin)
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
-    res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With,Accept')
-    res.header('Access-Control-Allow-Credentials', 'true')
-  }
-  res.sendStatus(200)
-})
+// Nota: O middleware cors já trata requisições OPTIONS (preflight) automaticamente
+// Não precisamos de handler explícito, o cors já faz isso
 
 // Rate limiting global
 const globalRateLimiter = rateLimit({
