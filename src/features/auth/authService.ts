@@ -185,9 +185,9 @@ export class AuthService {
       user: {
         id: user.id,
         name: user.name,
-        userName: user.userName,
         phone: user.phone,
-        email: user.email
+        ...(user.userName && { userName: user.userName }),
+        ...(user.email && { email: user.email })
       }
     }
   }
