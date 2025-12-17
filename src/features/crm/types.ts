@@ -4,6 +4,9 @@ export interface Panel {
   description?: string
   createdAt?: string
   updatedAt?: string
+  // IncludeDetails=Tags
+  tags?: unknown[]
+  // IncludeDetails=Steps
   steps?: PanelStep[]
 }
 
@@ -12,6 +15,8 @@ export interface PanelStep {
   title: string
   phase?: string
   position?: number
+  // IncludeDetails=StepsCardCount (Helena pode devolver como número ou objeto)
+  cardCount?: number | Record<string, unknown>
 }
 
 export interface Card {

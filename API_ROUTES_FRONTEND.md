@@ -105,6 +105,12 @@ Lista todos os painéis CRM do usuário autenticado.
 
 **Query Parameters:** Nenhum
 
+**Detalhes incluídos automaticamente (Helena IncludeDetails):**
+- `Tags`
+- `Steps`
+- `StepsCardCount`
+- `PanelCardOverdueCount`
+
 **Response 200:**
 ```json
 {
@@ -180,6 +186,14 @@ Lista cards com filtros opcionais.
 - `stepId` (string, opcional): Filtrar por step do painel
 - `page` (number, opcional): Número da página (padrão: 1)
 - `pageSize` (number, opcional): Itens por página (padrão: 100, máximo: 1000)
+
+**Detalhes incluídos automaticamente (Helena IncludeDetails):**
+- `PanelTitle`
+- `StepTitle`
+- `StepPhase`
+- `ResponsibleUser`
+- `Contacts`
+- `CustomFields`
 
 **Response 200:**
 ```json

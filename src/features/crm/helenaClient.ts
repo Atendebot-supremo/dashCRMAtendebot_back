@@ -6,6 +6,16 @@ interface HelenaConfig {
   token: string
 }
 
+const PANEL_INCLUDE_DETAILS = ['Tags', 'Steps', 'StepsCardCount'] as const
+const CARD_INCLUDE_DETAILS = [
+  'PanelTitle',
+  'StepTitle',
+  'StepPhase',
+  'ResponsibleUser',
+  'Contacts',
+  'CustomFields'
+] as const
+
 export class HelenaClient {
   private client: AxiosInstance
 
@@ -37,23 +47,52 @@ export class HelenaClient {
     )
   }
 
+  private buildUrl(path: string, options?: { params?: Record<string, unknown> | object; includeDetails?: readonly string[] }) {
+    if (!options?.params && !options?.includeDetails?.length) {
+      return path
+    }
+
+    const searchParams = new URLSearchParams()
+
+    if (options?.params) {
+      Object.entries(options.params as Record<string, unknown>).forEach(([key, value]) => {
+        if (value === undefined || value === null) return
+        searchParams.append(key, String(value))
+      })
+    }
+
+    if (options?.includeDetails?.length) {
+      options.includeDetails.forEach((detail) => {
+        searchParams.append('IncludeDetails', detail)
+      })
+    }
+
+    const query = searchParams.toString()
+    if (!query) return path
+    return `${path}?${query}`
+  }
+
   async getPanels(): Promise<PanelsResponse> {
-    const { data } = await this.client.get<PanelsResponse>('/crm/v1/panel')
+    const url = this.buildUrl('/crm/v1/panel', { includeDetails: PANEL_INCLUDE_DETAILS })
+    const { data } = await this.client.get<PanelsResponse>(url)
     return data
   }
 
   async getPanelById(panelId: string): Promise<Panel> {
-    const { data } = await this.client.get<Panel>(`/crm/v1/panel/${panelId}`)
+    const url = this.buildUrl(`/crm/v1/panel/${panelId}`, { includeDetails: PANEL_INCLUDE_DETAILS })
+    const { data } = await this.client.get<Panel>(url)
     return data
   }
 
   async getCards(params: CardFilters): Promise<CardsResponse> {
-    const { data } = await this.client.get<CardsResponse>('/crm/v1/panel/card', { params })
+    const url = this.buildUrl('/crm/v1/panel/card', { params, includeDetails: CARD_INCLUDE_DETAILS })
+    const { data } = await this.client.get<CardsResponse>(url)
     return data
   }
 
   async getCardById(cardId: string): Promise<Card> {
-    const { data } = await this.client.get<Card>(`/crm/v1/panel/card/${cardId}`)
+    const url = this.buildUrl(`/crm/v1/panel/card/${cardId}`, { includeDetails: CARD_INCLUDE_DETAILS })
+    const { data } = await this.client.get<Card>(url)
     return data
   }
 

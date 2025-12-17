@@ -43,6 +43,12 @@ Descrição: Lista todos os painéis CRM do usuário autenticado.
 📝 Query Parameters: Nenhum
 📦 Headers: Authorization: Bearer ${token}
 
+Detalhes incluídos automaticamente (Helena IncludeDetails):
+  • Tags
+  • Steps
+  • StepsCardCount
+  • PanelCardOverdueCount
+
 Exemplo de Requisição:
 ───────────────────────────────────────────────────────────────────────────────
 const token = localStorage.getItem('auth_token')
@@ -162,6 +168,14 @@ Descrição: Lista cards com filtros opcionais (paginação, datas, usuários, e
    • stepId (string, opcional) - Filtrar por step do painel
    • page (number, opcional) - Número da página (padrão: 1)
    • pageSize (number, opcional) - Itens por página (padrão: 100, máximo: 1000)
+
+Detalhes incluídos automaticamente (Helena IncludeDetails):
+  • PanelTitle
+  • StepTitle
+  • StepPhase
+  • ResponsibleUser
+  • Contacts
+  • CustomFields
 
 Exemplo de Requisição (Simples):
 ───────────────────────────────────────────────────────────────────────────────
