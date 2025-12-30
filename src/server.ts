@@ -38,7 +38,9 @@ const allowedOrigins = process.env.CORS_ORIGINS
       'http://localhost:5173',
       'http://localhost:3000',
       'https://dashcrmatendebotfront-desenvolvimento.up.railway.app',
-      'https://dashcrmatendebotfront-production.up.railway.app'
+      'https://dashcrmatendebotfront-production.up.railway.app',
+      'https://homolog-dashboard.atende.bot',
+      'https://dashboard.atende.bot'
     ]
 
 // CORS deve ser o PRIMEIRO middleware para garantir que preflight funcione
