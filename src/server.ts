@@ -54,6 +54,7 @@ app.use(
       
       // Verificar se a origin está na lista permitida
       if (allowedOrigins.includes(origin)) {
+        console.log('[CORS] Origin permitida:', origin)
         return callback(null, true)
       }
       
@@ -66,9 +67,18 @@ app.use(
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    allowedHeaders: [
+      'Content-Type', 
+      'Authorization', 
+      'X-Requested-With', 
+      'Accept',
+      'Origin',
+      'Access-Control-Request-Method',
+      'Access-Control-Request-Headers'
+    ],
     exposedHeaders: ['Content-Length', 'Content-Type'],
-    preflightContinue: false
+    preflightContinue: false,
+    maxAge: 86400 // 24 horas - cache do preflight
   })
 )
 
@@ -77,7 +87,8 @@ app.use(
   helmet({
     contentSecurityPolicy: NODE_ENV === 'production',
     crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: { policy: 'cross-origin' }
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginOpenerPolicy: false
   })
 )
 
