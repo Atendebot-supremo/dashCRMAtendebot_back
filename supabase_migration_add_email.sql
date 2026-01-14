@@ -38,3 +38,5 @@ COMMENT ON COLUMN users_dashcrmatendebot.email IS 'Email do usuário (opcional, 
 
 
 
+
+
