@@ -43,6 +43,25 @@ const allowedOrigins = process.env.CORS_ORIGINS
       'https://dashboard.atende.bot'
     ]
 
+const isOriginAllowed = (origin: string) => {
+  if (allowedOrigins.includes(origin)) {
+    return true
+  }
+
+  // Permitir subdomínios *.railway.app e *.atende.bot
+  if (/\.railway\.app$/.test(origin)) {
+    return true
+  }
+
+  if (/\.atende\.bot$/.test(origin)) {
+    return true
+  }
+
+  return false
+}
+
+console.log('[CORS] Origins configuradas:', allowedOrigins)
+
 // CORS deve ser o PRIMEIRO middleware para garantir que preflight funcione
 app.use(
   cors({
@@ -53,7 +72,7 @@ app.use(
       }
       
       // Verificar se a origin está na lista permitida
-      if (allowedOrigins.includes(origin)) {
+      if (isOriginAllowed(origin)) {
         console.log('[CORS] Origin permitida:', origin)
         return callback(null, true)
       }
